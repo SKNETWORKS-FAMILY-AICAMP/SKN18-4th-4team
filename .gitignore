@@ -338,5 +338,6 @@ $RECYCLE.BIN/
 
 # Database data directory
 infra/database/
+rag/data/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,django,windows,macos,jupyternotebooks

@@ -1,0 +1,2 @@
+-- 테이블/인덱스 초기 스키마
+-- CREATE EXTENSION vector; 

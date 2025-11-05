@@ -11,6 +11,21 @@ uv venv .venv --python 3.12
 .venv/Scripts/activate
 uv pip install -r requirements.txt
 ```
+- Docker
+```bash
+# windows
+docker-compose -f infra/docker-compose.yml up -d
+# mac
+docker compose -f infra/docker-compose.yml up -d
+```
+
+- PostgreSQL 접속
+  - host: localhost
+  - port: 5432
+  - Database: sknproject4
+  - username: .env.example 참고
+  - pwd: .env.example 참고
+
 ---
 
 # RAG
@@ -37,4 +52,3 @@ uv pip install -r requirements.txt
 ```
 cd django-app
 ```
-

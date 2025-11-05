@@ -336,4 +336,7 @@ $RECYCLE.BIN/
 # ETC
 .history
 
+# Database data directory
+infra/database/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django,windows,macos,jupyternotebooks

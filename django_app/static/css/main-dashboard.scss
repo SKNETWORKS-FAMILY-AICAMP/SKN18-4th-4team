@@ -1,160 +1,13 @@
-/* Reset & Base */
-$font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-$text-primary: #1f2937;
-$text-muted: #6b7280;
-$brand-blue: #3b82f6;
-$brand-blue-dark: #2563eb;
-$card-border: #e5e7eb;
-$main-bg-start: #f9fafb;
-$main-bg-end: #dbeafe;
+@import 'tokens';
 
-@mixin flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: $font-stack;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
-  color: $text-primary;
-}
-
-h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  line-height: 2.25rem;
-}
-
-h2 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  line-height: 2.25rem;
-}
-
-h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  line-height: 2rem;
-}
-
-h4 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.75rem;
-}
-
-/* Utility */
-.container {
-  max-width: 80rem;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.card {
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  // border: 1px solid $card-border;
-}
-
-.btn {
-  @include flex-center;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: pointer;
-  border: none;
-  font-size: 0.875rem;
-  gap: 0.5rem;
-
-  &-primary {
-    background: $brand-blue;
-    color: white;
-
-    &:hover {
-      background: $brand-blue-dark;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-}
-
-.btn-large {
-  padding: 0.75rem 2rem;
-  font-size: 1.125rem;
-}
-
-/* Grid */
-.grid {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-@media (min-width: 768px) {
-  .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .md\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* Main page */
 .main-page {
   min-height: 100vh;
-  background: linear-gradient(to bottom right, $main-bg-start, $main-bg-end);
+  background: linear-gradient(to bottom right, #f9fafb, #dbeafe);
 }
 
 .main-header {
   background: white;
-  border-bottom: 1px solid $card-border;
-}
-
-.stat-card {
-  transition: all 0.2s;
-  // border: 2px solid $card-border;
-
-  &:hover {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: scale(1.05);
-  }
-}
-
-.stat-value {
-  font-size: 36px;
-  font-weight: 700;
-  line-height: 1;
-  color: $text-primary;
-}
-
-.hero-description {
-  color: $text-muted;
-  max-width: 42rem;
-  margin: 0 auto 2rem;
+  border-bottom: 1px solid $border-default;
 }
 
 .page-padding {
@@ -162,8 +15,15 @@ h4 {
 }
 
 .section-hero {
+  text-align: center;
   text-align: -webkit-center;
   margin-bottom: 3rem;
+}
+
+.hero-description {
+  color: $text-muted;
+  max-width: 42rem;
+  margin: 0 auto 2rem;
 }
 
 .section-spacing {
@@ -174,47 +34,28 @@ h4 {
   padding: 1rem 0;
 }
 
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.stat-card {
+  transition: all 0.2s;
+  border: 2px solid $border-default;
+
+  &:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: scale(1.05);
+  }
 }
 
-.flex-gap-sm {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.flex-gap-md {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.badge-square {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
-  @include flex-center;
-}
-
-.badge-circle {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  @include flex-center;
-}
-
-.text-right {
-  text-align: right;
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: $text-primary;
 }
 
 .stat-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
 }
 
 .stat-chip {
@@ -226,8 +67,7 @@ h4 {
 .stat-icon {
   width: 3rem;
   height: 3rem;
-  // border-radius: 0.75rem;
-  border-radius: 10px;
+  border-radius: 0.75rem;
   @include flex-center;
 }
 
@@ -237,13 +77,4 @@ h4 {
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   @include flex-center;
-}
-
-.icon-button {
-  padding: 0.5rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  border-radius: 0.5rem;
-  transition: background 0.2s;
 }

@@ -333,6 +333,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+#scss
+staticfiles/
+
 # ETC
 .history
 rag/data/**

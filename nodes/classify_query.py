@@ -1,6 +1,9 @@
 from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
 client = OpenAI()
+
 
 def classify_query(state):
     """
@@ -23,7 +26,6 @@ def classify_query(state):
     response = client.chat.completions.create(
         model="gpt-5-nano",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0
     )
 
     result = response.choices[0].message.content.strip()

@@ -42,8 +42,7 @@ def evaluate_chunk(state, vectorstore=None, threshold: float = 0.4):
         try:
             res = client.chat.completions.create(
                 model="gpt-5-nano",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
+                messages=[{"role": "user", "content": prompt}]
             )
 
             text = res.choices[0].message.content.strip()

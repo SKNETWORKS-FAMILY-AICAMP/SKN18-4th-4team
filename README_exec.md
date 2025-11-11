@@ -5,26 +5,26 @@
 
 # 공통
 
-- Python Version 3.12.x
+1. Python Version 3.12.x
 ```bash
 uv venv .venv --python 3.12
 .venv/Scripts/activate
 uv pip install -r requirements.txt
 ```
-- Docker
+2. .env.example 파일 복사해서 .env 파일 생성
+3. Docker
 ```bash
 # windows
 docker-compose -f infra/docker-compose.yml up -d
 # mac
 docker compose -f infra/docker-compose.yml up -d
 ```
-
-- PostgreSQL 접속
-  - host: localhost
-  - port: 5432
-  - Database: sknproject4
-  - username: .env.example 참고
-  - pwd: .env.example 참고
+4. PostgreSQL 접속
+   - host: localhost
+   - port: 5432
+   - Database: sknproject4
+   - username: .env.example 참고
+   - pwd: .env.example 참고
 
 ---
 
@@ -48,7 +48,15 @@ docker compose -f infra/docker-compose.yml up -d
 ---
 
 # Web
+1. postgreSQL 실행 확인
+3. 실행
+```bash
+python django_app/manage.py migrate
+python django_app/manage.py runserver
+```
+1. 화면 접속 (메인 - 대시보드)
+   - http://localhost:8000/main
+2. Admin
+   -  http://localhost:8000/admin/
+   -  admin / admin1234
 
-```
-cd django-app
-```

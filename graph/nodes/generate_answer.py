@@ -1,0 +1,115 @@
+# nodes/generate_answer.py
+from openai import OpenAI
+from graph.state import SelfRAGState
+
+client = OpenAI()
+
+def generate_answer(state: SelfRAGState) -> SelfRAGState:
+    """
+    통합 답변 생성 노드
+    - 비의학 질문: 안내 메시지
+    - 의학 용어 질문: WebSearch 결과 기반 답변
+    - 일반 의학 질문: RAG 문서 기반 답변
+    """
+
+    # 1. 비의학 질문 처리 (guidance 로직)
+    if state.get("need_quit", False):
+        state["final_answer"] = """
+죄송합니다. 현재 시스템은 의학 관련 질문만 답변할 수 있습니다.
+
+의학, 건강, 질병, 증상, 치료 등과 관련된 질문을 해주시면 도움을 드리겠습니다.
+
+예시:
+- "당뇨병이란 무엇인가요?"
+- "고혈압의 증상은 무엇인가요?"
+- "독감 예방접종은 언제 받는 것이 좋나요?"
+        """.strip()
+        return state
+
+    # 2. 의학 질문 처리
+    query = state.get("question", "")
+    context = state.get("context", "")
+    sources = state.get("sources", [])
+    is_terminology = state.get("is_terminology", False)
+
+    # 컨텍스트가 없는 경우
+    if not context:
+        if is_terminology:
+            state["final_answer"] = "죄송합니다. 관련 정보를 찾을 수 없습니다."
+        else:
+            state["final_answer"] = "죄송합니다. 관련 문서를 찾을 수 없습니다."
+        return state
+
+    # 3. WebSearch 결과 기반 답변 (answer_websearch 로직)
+    if is_terminology:
+        prompt = f"""
+사용자 질문: {query}
+
+검색된 정보:
+{context}
+
+위 정보를 바탕으로 사용자 질문에 대해 정확하고 간결하게 답변해주세요.
+답변은 다음 형식으로 작성하세요:
+
+1. 핵심 답변 (2-3문장)
+2. 상세 설명 (필요시)
+
+주의사항:
+- 검색 결과에 있는 정보만 사용하세요
+- 출처 번호([출처 1], [출처 2] 등)를 포함하여 답변하세요
+- 의학 정보는 신중하게 전달하세요
+- 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요.
+        """
+
+        res = client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        answer = res.choices[0].message.content.strip()
+
+        # 출처 추가
+        if sources:
+            sources_text = "\n\n📚 출처:\n" + "\n".join(sources)
+            state["final_answer"] = answer + sources_text
+        else:
+            state["final_answer"] = answer
+
+    # 4. RAG 문서 기반 답변 (answer_rag 로직)
+    else:
+        prompt = f"""
+사용자 질문: {query}
+
+관련 문서:
+{context}
+
+위 문서를 근거로 사용자 질문에 대해 정확하고 상세하게 답변해주세요.
+
+답변 형식:
+1. 핵심 답변 (2-3문장)
+2. 상세 설명
+3. 주의사항 (필요시)
+
+# 작성 규칙:
+- 문서에 있는 정보만 사용하세요
+- 문서 번호([문서 1], [문서 2] 등)를 인용하세요
+- 의학 정보는 신중하고 정확하게 전달하세요
+- 추측하지 말고 문서 내용에 충실하세요
+- 참고 문서에서 1-5 번까지 띄울 때 이전번호에서 나온 참고문서와 중복이면 이후에 나온 참고문서는 삭제해주세요.
+        """
+
+        res = client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        answer = res.choices[0].message.content.strip()
+
+        # 참고 문서 추가
+        if sources:
+            sources_text = "\n\n📚 참고 문서:\n" + "\n".join(sources)
+            state["final_answer"] = answer + sources_text
+        else:
+            state["final_answer"] = answer
+
+    return state

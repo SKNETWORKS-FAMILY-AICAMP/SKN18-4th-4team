@@ -138,3 +138,44 @@ SKN18-4th-4Team/
     - LLM이 질문할 때 → retriever가 벡터 검색을 하기 전 → “어떤 방식으로 벡터를 인덱싱해둘지”를 설정해주는 역할
     - ivfflat 인덱스 : pgvector는 일반 B-tree 대신 “IVFFLAT(Indexed Vector Flat)” 구조를 사용
     - IVFFLAT은 단순히 인덱스를 만드는 게 아니라, K-means clustering으로 벡터 공간을 “lists” 개수만큼 쪼갠다.
+
+
+
+---
+
+# LangGraph
+
+- 내/외부 의사 결정
+```mermaid
+flowchart TD
+    START([사용자 질의])
+    C[Classifier 노드<br/>의학 관련 여부 & 유형 분류]
+    G{의학 관련?}
+    H{의학 용어 질문?}
+    K[WebSearch 노드<br/>Tavily로 용어 정의 검색]
+    R[Retrieval 노드<br/>pgvector에서 관련 문서 검색]
+    A1[Answer 노드<br/>WebSearch 결과 요약·인용]
+    A2[Answer 노드<br/>RAG: 문서 근거 기반 응답]
+    N[안내 노드<br/>비의학 질문 처리 불가 안내]
+    E([응답])
+
+    START --> C --> G
+    G -- 아니오(No) --> N --> E
+    G -- 예(Yes) --> H
+    H -- 예(Yes) --> K --> A1 --> E
+    H -- 아니오(No) --> R --> A2 --> E
+```
+
+
+---
+
+# RAG
+
+
+
+
+---
+
+
+# Web
+

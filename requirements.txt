@@ -3,6 +3,8 @@ djangorestframework
 django-environ
 psycopg2-binary
 gunicorn
+django-sass-processor
+libsass
 
 SQLAlchemy==2.0.43
 asyncmy>=0.2.10

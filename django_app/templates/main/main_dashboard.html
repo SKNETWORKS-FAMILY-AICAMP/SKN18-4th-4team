@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static sass_tags %}
+
+{% block title %}MedAI Research - 메인{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% sass_src 'css/main-dashboard.scss' %}">
+{% endblock %}
+
+{% block content %}
+    <div
+      class="main-page"
+      data-dashboard
+      data-user-name="{{ user_name }}"
+      data-user-email="{{ user_email }}"
+      data-chat-url="{{ chat_url }}"
+      data-logout-url="{{ logout_url }}"
+      data-show-logout="{{ show_logout|yesno:'true,false' }}"
+    >
+      <header class="main-header">
+        <div class="container header-padding">
+          <div class="flex-between">
+            <div class="flex-gap-sm">
+              <div class="badge-square brand-badge">
+                <i class="fa-solid fa-robot brand-badge__icon"></i>
+              </div>
+              <div>
+                <h1 class="brand-title">MedAI Research</h1>
+                <p class="brand-subtitle">의료 연구 AI 어시스턴트</p>
+              </div>
+            </div>
+            <div class="flex-gap-md">
+              <div class="flex-gap-sm">
+                <div class="badge-circle user-avatar">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="text-right">
+                  <div id="userName" class="user-name"></div>
+                  <div id="userEmail" class="user-email"></div>
+                </div>
+              </div>
+              {% if show_logout %}
+              <button id="logoutBtn" class="icon-button" title="로그아웃">
+                <i class="fa-solid fa-arrow-right-from-bracket logout-icon"></i>
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="container page-padding">
+        <div class="section-hero">
+          <h2 class="hero-title">의료 연구를 위한 AI 어시스턴트</h2>
+          <p class="hero-description">
+            최신 의학 논문 데이터베이스를 기반으로 신뢰할 수 있는 정보를 제공합니다.
+            림프절 전이 예측, MMP/TIMP 발현, 임상시험 검색 등 전문적인 의학 질문에 대해
+            검증된 참고문헌과 함께 답변을 받아보세요.
+          </p>
+          <button id="startChatBtn" class="btn btn-primary btn-large">
+            AI 채팅 시작하기
+            <i class="fa-solid fa-arrow-right text-white"></i>
+          </button>
+        </div>
+
+        <div class="section-spacing">
+          <h3 class="section-title">플랫폼 현황</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div class="card stat-card stat-card--padded">
+              <div class="stat-card-header">
+              <div class="flex-gap-sm">
+                <div class="stat-icon bg-soft-blue">
+                  <i class="fa-solid fa-book-medical text-brand-blue-dark"></i>
+                  </div>
+                  <p class="stat-title">총 논문 수</p>
+                </div>
+                <span class="stat-chip stat-chip--positive">+124</span>
+              </div>
+              <div>
+                <p class="stat-value">2,847</p>
+              </div>
+            </div>
+
+            <div class="card stat-card stat-card--padded">
+              <div class="stat-card-header">
+                <div class="flex-gap-sm">
+                  <div class="stat-icon bg-soft-green">
+                    <i class="fa-solid fa-comments text-accent-green"></i>
+                  </div>
+                  <p class="stat-title">활성 대화</p>
+                </div>
+                <span class="stat-chip stat-chip--positive">+23</span>
+              </div>
+              <div>
+                <p class="stat-value">156</p>
+              </div>
+            </div>
+
+            <div class="card stat-card stat-card--padded">
+              <div class="stat-card-header">
+                <div class="flex-gap-sm">
+                  <div class="stat-icon bg-soft-lime">
+                    <i class="fa-solid fa-chart-line text-lime"></i>
+                  </div>
+                  <p class="stat-title">하루 질문 수</p>
+                </div>
+                <span class="stat-chip stat-chip--negative">-8%</span>
+              </div>
+              <div>
+                <p class="stat-value">184</p>
+              </div>
+            </div>
+
+            <div class="card stat-card stat-card--padded">
+              <div class="stat-card-header">
+                <div class="flex-gap-sm">
+                  <div class="stat-icon bg-soft-amber">
+                    <i class="fa-solid fa-user-group text-amber"></i>
+                  </div>
+                  <p class="stat-title">활성 사용자</p>
+                </div>
+                <span class="stat-chip stat-chip--positive">+12</span>
+              </div>
+              <div>
+                <p class="stat-value">89</p>
+              </div>
+            </div>
+
+            <div class="card stat-card stat-card--padded">
+              <div class="stat-card-header">
+                <div class="flex-gap-sm">
+                  <div class="stat-icon bg-soft-indigo">
+                    <i class="fa-solid fa-bullseye text-indigo"></i>
+                  </div>
+                  <p class="stat-title">AI 응답 정확도</p>
+                </div>
+                <span class="stat-chip stat-chip--positive">+2.1%</span>
+              </div>
+              <div>
+                <p class="stat-value">94.8%</p>
+              </div>
+            </div>
+
+            <div class="card stat-card stat-card--padded">
+              <div class="stat-card-header">
+                <div class="flex-gap-sm">
+                  <div class="stat-icon bg-soft-pink">
+                    <i class="fa-solid fa-stopwatch text-pink"></i>
+                  </div>
+                  <p class="stat-title">평균 응답 시간</p>
+                </div>
+                <span class="stat-chip stat-chip--info">-0.3초</span>
+              </div>
+              <div>
+                <p class="stat-value">1.2초</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-spacing">
+          <h3 class="section-title">주요 기능</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3">
+            <div class="card card--padded">
+              <div class="feature-icon bg-soft-blue">
+                <i class="fa-solid fa-certificate text-brand-blue-dark"></i>
+              </div>
+              <h4 class="feature-title">검증된 논문 기반</h4>
+              <p class="stat-title">
+                PubMed, DOI 링크가 포함된 신뢰할 수 있는 의학 정보를 제공합니다.
+              </p>
+            </div>
+
+            <div class="card card--padded">
+              <div class="feature-icon bg-soft-green">
+                <i class="fa-solid fa-book-open-reader text-accent-green"></i>
+              </div>
+              <h4 class="feature-title">참고문헌 자동 생성</h4>
+              <p class="stat-title">
+                모든 응답에 관련 논문의 참고문헌이 자동으로 포함됩니다.
+              </p>
+            </div>
+
+            <div class="card card--padded">
+              <div class="feature-icon bg-soft-violet">
+                <i class="fa-solid fa-bolt text-violet"></i>
+              </div>
+              <h4 class="feature-title">빠른 질의응답</h4>
+              <p class="stat-title">
+                의학 용어 툴팁과 질문 템플릿으로 더 빠르게 정보를 찾을 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/main-dashboard.js' %}" defer></script>
+{% endblock %}

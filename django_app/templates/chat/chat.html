@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static sass_tags %}
+
+{% block title %}AI 채팅 - MedAI Research{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% sass_src 'css/chat.scss' %}">
+{% endblock %}
+
+{% block content %}
+<div
+  class="chat-container"
+  data-chat
+  data-user-name="{{ user_name }}"
+  data-user-email="{{ user_email }}"
+  data-main-url="{{ main_url }}"
+  data-logout-url="{{ logout_url }}"
+>
+  <div id="chatSidebar" class="chat-sidebar">
+    <div class="chat-sidebar-section chat-sidebar-section--header">
+      <button id="newChatBtn" class="btn btn-primary new-chat-btn">
+        <i class="icon-sm fa-solid fa-plus"></i>
+        <span>새로운 대화</span>
+      </button>
+    </div>
+
+    <div id="chatHistory" class="chat-history"></div>
+
+    <div class="chat-sidebar-section chat-sidebar-section--footer">
+      <button id="backToMainBtn" class="icon-button sidebar-back-btn">
+        <i class="icon-sm fa-solid fa-house"></i>
+        <span class="sidebar-back-label">메인으로 돌아가기</span>
+      </button>
+
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
+          <i class="icon-sm fa-solid fa-user"></i>
+        </div>
+        <div class="sidebar-user-info">
+          <div id="sidebarUserName" class="sidebar-user-name"></div>
+          <div id="sidebarUserEmail" class="sidebar-user-email"></div>
+        </div>
+        <button id="sidebarLogoutBtn" class="icon-button" title="로그아웃">
+          <i class="icon-sm fa-solid fa-right-from-bracket sidebar-logout-icon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-main">
+    <div class="chat-header">
+      <button id="toggleSidebarBtn" class="icon-button">
+        <i id="toggleIcon" class="icon fa-solid fa-xmark"></i>
+      </button>
+      <div class="chat-header-center">
+        <h1 class="chat-header-title">의료 연구 AI 어시스턴트</h1>
+      </div>
+      <div class="chat-header-placeholder"></div>
+    </div>
+
+    <div id="chatMessages" class="chat-messages-area"></div>
+
+    <div class="chat-input-container">
+      {% if quick_template_sections %}
+      <div id="quickTemplatesContainer" class="quick-templates">
+        <div class="quick-templates__content">
+          <div class="quick-templates__header">
+            <i class="icon-sm fa-solid fa-lightbulb quick-templates__icon"></i>
+            <span class="quick-templates__subtitle">자주 묻는 질문</span>
+          </div>
+
+          <div class="quick-templates__grid">
+            {% for section in quick_template_sections %}
+            <div class="quick-templates__column">
+              <div class="quick-templates__section-title">{{ section.title }}</div>
+              {% for question in section.items %}
+              <button class="template-btn" data-template="{{ question|escape }}">{{ question }}</button>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="chat-input-wrapper">
+        <form id="chatForm" class="chat-form">
+          <div class="chat-input-shell">
+            <input
+              type="text"
+              id="chatInput"
+              placeholder="의학 연구 질문을 입력하세요..."
+              class="chat-input-field"
+            />
+            <button type="submit" id="sendBtn" disabled class="chat-send-btn">
+              <i class="icon-sm fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+          <p class="chat-disclaimer">
+            AI가 실수를 할 수 있습니다. 중요한 정보는 확인하세요.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}" defer></script>
+{% endblock %}

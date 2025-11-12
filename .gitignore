@@ -333,7 +333,11 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+#scss
+staticfiles/
+
 # ETC
 .history
+rag/data/**
 
 # End of https://www.toptal.com/developers/gitignore/api/python,django,windows,macos,jupyternotebooks

@@ -17,39 +17,31 @@
   data-logout-url="{{ logout_url }}"
 >
   <div id="chatSidebar" class="chat-sidebar">
-    <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
-      <button id="newChatBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
-        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+    <div class="chat-sidebar-section chat-sidebar-section--header">
+      <button id="newChatBtn" class="btn btn-primary new-chat-btn">
+        <i class="icon-sm fa-solid fa-plus"></i>
         <span>새로운 대화</span>
       </button>
     </div>
 
-    <div id="chatHistory" style="flex: 1; overflow-y: auto; padding: 0.5rem 0;"></div>
+    <div id="chatHistory" class="chat-history"></div>
 
-    <div style="padding: 0.75rem; border-top: 1px solid #e5e7eb; margin-top: auto;">
-      <button id="backToMainBtn" class="icon-button" style="width: 100%; justify-content: flex-start; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; color: #374151; margin-bottom: 0.5rem;">
-        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        <span style="font-size: 0.875rem;">메인으로 돌아가기</span>
+    <div class="chat-sidebar-section chat-sidebar-section--footer">
+      <button id="backToMainBtn" class="icon-button sidebar-back-btn">
+        <i class="icon-sm fa-solid fa-house"></i>
+        <span class="sidebar-back-label">메인으로 돌아가기</span>
       </button>
 
-      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem;">
-        <div style="width: 2rem; height: 2rem; border-radius: 9999px; background: #3b82f6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <svg class="icon-sm" fill="none" stroke="white" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
+          <i class="icon-sm fa-solid fa-user"></i>
         </div>
-        <div style="flex: 1; min-width: 0;">
-          <div id="sidebarUserName" style="font-size: 0.875rem; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
-          <div id="sidebarUserEmail" style="font-size: 0.75rem; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+        <div class="sidebar-user-info">
+          <div id="sidebarUserName" class="sidebar-user-name"></div>
+          <div id="sidebarUserEmail" class="sidebar-user-email"></div>
         </div>
         <button id="sidebarLogoutBtn" class="icon-button" title="로그아웃">
-          <svg class="icon-sm" fill="none" stroke="#6b7280" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
+          <i class="icon-sm fa-solid fa-right-from-bracket sidebar-logout-icon"></i>
         </button>
       </div>
     </div>
@@ -58,69 +50,54 @@
   <div class="chat-main">
     <div class="chat-header">
       <button id="toggleSidebarBtn" class="icon-button">
-        <svg id="toggleIcon" class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <i id="toggleIcon" class="icon fa-solid fa-xmark"></i>
       </button>
-      <div style="flex: 1; text-align: center;">
-        <h1 style="font-size: 1.125rem; color: #374151;">의료 연구 AI 어시스턴트</h1>
+      <div class="chat-header-center">
+        <h1 class="chat-header-title">의료 연구 AI 어시스턴트</h1>
       </div>
-      <div style="width: 2.25rem;"></div>
+      <div class="chat-header-placeholder"></div>
     </div>
 
     <div id="chatMessages" class="chat-messages-area"></div>
 
     <div class="chat-input-container">
-      <div id="quickTemplatesContainer" style="display: none; padding: 1rem 0; background: #f9fafb;">
-        <div style="max-width: 48rem; margin: 0 auto; padding: 0 1rem 1rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-            <svg class="icon-sm" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <span style="font-size: 0.875rem; color: #6b7280;">자주 묻는 질문</span>
+      {% if quick_template_sections %}
+      <div id="quickTemplatesContainer" class="quick-templates">
+        <div class="quick-templates__content">
+          <div class="quick-templates__header">
+            <i class="icon-sm fa-solid fa-lightbulb quick-templates__icon"></i>
+            <span class="quick-templates__subtitle">자주 묻는 질문</span>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <div style="font-size: 0.75rem; color: #9ca3af; padding: 0 0.25rem;">예측 인자</div>
-              <button class="template-btn" data-template="점막하 침윤 대장암에서 림프절 전이 예측 인자는 무엇인가요?">점막하 침윤 대장암에서 림프절 전이 예측 인자는 무엇인가요?</button>
-              <button class="template-btn" data-template="TIMP-2 발현이 림프관 침윤과 연관 있나요?">TIMP-2 발현이 림프관 침윤과 연관 있나요?</button>
-              <button class="template-btn" data-template="MMP-9의 발현이 림프절 전이에 영향을 준 사례가 있나요?">MMP-9의 발현이 림프절 전이에 영향을 준 사례가 있나요?</button>
+          <div class="quick-templates__grid">
+            {% for section in quick_template_sections %}
+            <div class="quick-templates__column">
+              <div class="quick-templates__section-title">{{ section.title }}</div>
+              {% for question in section.items %}
+              <button class="template-btn" data-template="{{ question|escape }}">{{ question }}</button>
+              {% endfor %}
             </div>
-
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <div style="font-size: 0.75rem; color: #9ca3af; padding: 0 0.25rem;">연구 검색</div>
-              <button class="template-btn" data-template="조기 대장암에서 신생혈관 형성과 예후의 관계를 연구한 논문 있나요?">조기 대장암에서 신생혈관 형성과 예후의 관계를 연구한 논문 있나요?</button>
-              <button class="template-btn" data-template="MMP-2, MMP-9을 동시에 분석한 연구 찾아줘">MMP-2, MMP-9을 동시에 분석한 연구 찾아줘</button>
-              <button class="template-btn" data-template="점막하 침윤암의 림프절 전이율은 보통 몇 %인가요?">점막하 침윤암의 림프절 전이율은 보통 몇 %인가요?</button>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <div style="font-size: 0.75rem; color: #9ca3af; padding: 0 0.25rem;">치료 기준</div>
-              <button class="template-btn" data-template="내시경 절제술 후 추가 절제 기준으로 어떤 지표가 제시되었나요?">내시경 절제술 후 추가 절제 기준으로 어떤 지표가 제시되었나요?</button>
-              <button class="template-btn" data-template="심달도(sm1·sm2·sm3) 기준은 어떤 연구에서 정의되었나요?">심달도(sm1·sm2·sm3) 기준은 어떤 연구에서 정의되었나요?</button>
-              <button class="template-btn" data-template="ECOG 0~2 조건이 포함된 임상연구 사례 보여줘">ECOG 0~2 조건이 포함된 임상연구 사례 보여줘</button>
-            </div>
+            {% endfor %}
           </div>
+
         </div>
       </div>
+      {% endif %}
 
-      <div style="padding: 1rem;">
-        <form id="chatForm" style="max-width: 48rem; margin: 0 auto;">
-          <div style="position: relative; display: flex; align-items: center; gap: 0.5rem; background: #f3f4f6; border-radius: 1.5rem; padding: 0.75rem 1rem;">
+      <div class="chat-input-wrapper">
+        <form id="chatForm" class="chat-form">
+          <div class="chat-input-shell">
             <input
               type="text"
               id="chatInput"
               placeholder="의학 연구 질문을 입력하세요..."
-              style="flex: 1; background: transparent; border: 0; outline: none; font-size: 0.875rem;"
+              class="chat-input-field"
             />
-            <button type="submit" id="sendBtn" disabled style="padding: 0.5rem; background: #3b82f6; border-radius: 0.5rem; border: none; cursor: pointer; transition: background 0.2s;">
-              <svg class="icon-sm" fill="none" stroke="white" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
+            <button type="submit" id="sendBtn" disabled class="chat-send-btn">
+              <i class="icon-sm fa-solid fa-paper-plane"></i>
             </button>
           </div>
-          <p style="font-size: 0.75rem; color: #9ca3af; text-align: center; margin-top: 0.5rem;">
+          <p class="chat-disclaimer">
             AI가 실수를 할 수 있습니다. 중요한 정보는 확인하세요.
           </p>
         </form>

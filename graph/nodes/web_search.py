@@ -10,6 +10,9 @@ def web_search(state: SelfRAGState) -> SelfRAGState:
     """
     query = state.get("question", "").strip()
 
+    # 시작 로그
+    print(f"• [WebSearch] start (query=\"{query[:50]}...\", max_results=3)")
+
     # Tavily 검색 도구 초기화 (max_results=3으로 상위 3개 결과만)
     search_tool = TavilySearchResults(max_results=3)
 
@@ -34,6 +37,9 @@ def web_search(state: SelfRAGState) -> SelfRAGState:
 
         state["context"] = "\n\n".join(context_parts)
         state["sources"] = sources
+
+        # 완료 로그
+        print(f"• [WebSearch] complete (results={len(results)})")
 
     except Exception as e:
         # 검색 실패 시

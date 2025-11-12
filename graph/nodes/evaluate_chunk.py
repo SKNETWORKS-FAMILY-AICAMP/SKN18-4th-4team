@@ -11,9 +11,14 @@ def evaluate_chunk(state):
     query = state.get("question", "").strip()
     context = state.get("context", "")
 
+    # 시작 로그
+    context_len = len(context)
+    print(f"• [EvaluateChunk] start (query=\"{query[:50]}...\", context_chars={context_len})")
+
     if not query or not context:
         state["relevance_score"] = 0.0
         state["is_relevant"] = False
+        print(f"• [EvaluateChunk] complete (is_relevant=False, score=0.0)")
         return state
 
     prompt = f"""
@@ -55,5 +60,8 @@ def evaluate_chunk(state):
             pass
 
     state["evaluation_result"] = result
+
+    # 완료 로그
+    print(f"• [EvaluateChunk] complete (is_relevant={state['is_relevant']}, score={state['relevance_score']})")
 
     return state

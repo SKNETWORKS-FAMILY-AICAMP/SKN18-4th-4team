@@ -10,7 +10,11 @@ def medical_check(state: SelfRAGState) -> SelfRAGState:
     의학 용어 질문 판단 노드
     질문이 의학 용어의 정의를 묻는지 판별
     """
+
     query = state.get("question", "").strip()
+
+    # 시작 로그
+    print(f"• [MedicalCheck] start (question=\"{query[:50]}...\")")
 
     prompt = f"""
     사용자의 질문:
@@ -39,5 +43,8 @@ def medical_check(state: SelfRAGState) -> SelfRAGState:
         state["is_terminology"] = True
     else:
         state["is_terminology"] = False
+
+    # 완료 로그
+    print(f"• [MedicalCheck] complete (is_terminology={state['is_terminology']})")
 
     return state

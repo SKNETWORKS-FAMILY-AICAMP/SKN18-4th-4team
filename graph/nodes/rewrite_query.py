@@ -10,8 +10,12 @@ def rewrite_query(state):
     """
     original_query = state.get("question", "").strip()
 
+    # 시작 로그
+    print(f"• [QueryRewrite] start (question=\"{original_query[:50]}...\")")
+
     if not original_query:
         state["rewritten_question"] = ""
+        print(f"• [QueryRewrite] complete (rewritten=\"\")")
         return state
 
     # 평가 결과가 있다면 참고
@@ -44,5 +48,8 @@ def rewrite_query(state):
 
     # 재작성 횟수 증가
     state["rewrite_count"] = state.get("rewrite_count", 0) + 1
+
+    # 완료 로그
+    print(f"• [QueryRewrite] complete (rewritten=\"{rewritten[:50]}...\", count={state['rewrite_count']})")
 
     return state

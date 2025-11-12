@@ -10,10 +10,15 @@ def classifier(state: SelfRAGState) -> SelfRAGState:
     Classifier 노드
     사용자 질문이 의학 관련 여부를 판별
     """
+
     query = state.get("question", "").strip()
+
+    # 시작 로그
+    print(f"• [Classifier] start (question=\"{query[:50]}...\")")
 
     if not query:
         state["need_quit"] = True
+        print(f"• [Classifier] complete (need_quit=True)")
         return state
 
     prompt = f"""
@@ -37,5 +42,8 @@ def classifier(state: SelfRAGState) -> SelfRAGState:
         state["need_quit"] = True
     else:
         state["need_quit"] = False
+
+    # 완료 로그
+    print(f"• [Classifier] complete (need_quit={state['need_quit']})")
 
     return state

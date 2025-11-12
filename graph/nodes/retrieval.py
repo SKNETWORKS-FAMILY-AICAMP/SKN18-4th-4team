@@ -10,6 +10,9 @@ def retrieval(state: SelfRAGState, vectorstore: PGVector) -> SelfRAGState:
     """
     query = state.get("question", "").strip()
 
+    # 시작 로그
+    print(f"• [Retrieve] start (top_k=5, query=\"{query[:50]}...\")")
+
     try:
         # vectorstore에서 유사도 검색 (상위 5개)
         docs = vectorstore.similarity_search_with_score(query, k=5)
@@ -40,6 +43,9 @@ def retrieval(state: SelfRAGState, vectorstore: PGVector) -> SelfRAGState:
         state["retrieved_docs"] = retrieved_docs
         state["context"] = "\n\n".join(context_parts)
         state["sources"] = sources
+
+        # 완료 로그
+        print(f"• [Retrieve] complete (fetched={len(retrieved_docs)} docs)")
 
     except Exception as e:
         # 검색 실패 시

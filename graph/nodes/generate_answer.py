@@ -12,6 +12,12 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
     - 일반 의학 질문: RAG 문서 기반 답변
     """
 
+    # 시작 로그
+    query = state.get("question", "")
+    context_len = len(state.get("context", ""))
+    is_terminology = state.get("is_terminology", False)
+    print(f"• [Generate] start (context_chars={context_len}, is_terminology={is_terminology})")
+
     # 1. 비의학 질문 처리 (guidance 로직)
     if state.get("need_quit", False):
         state["final_answer"] = """
@@ -111,5 +117,9 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
             state["final_answer"] = answer + sources_text
         else:
             state["final_answer"] = answer
+
+    # 완료 로그
+    answer_len = len(state.get("final_answer", ""))
+    print(f"• [Generate] complete (answer_chars={answer_len})")
 
     return state

@@ -76,18 +76,14 @@ document.addEventListener("DOMContentLoaded", () => {
       div.className = `conversation-item ${conv.id === currentConversationId ? "active" : ""}`;
       div.innerHTML = `
         <div class="conversation-item-content">
-          <svg class="conversation-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+          <i class="conversation-icon fa-solid fa-comment-dots"></i>
           <div class="conversation-text">
             <div class="conversation-title">${conv.title}</div>
             <div class="conversation-date">${formatDate(conv.updatedAt)}</div>
           </div>
         </div>
         <button class="conversation-delete" data-id="${conv.id}">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          <i class="fa-solid fa-trash"></i>
         </button>
       `;
 
@@ -131,9 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
       messagesContainer.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-content">
-            <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <i class="empty-state-icon fa-solid fa-comments"></i>
             <h2 style="margin-bottom: 0.5rem; color: #6b7280; font-size: 1.125rem;">새로운 대화를 시작하세요</h2>
             <p style="font-size: 0.875rem;">의학 연구 관련 질문을 입력하거나 아래 템플릿을 선택해보세요.</p>
           </div>
@@ -152,9 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (msg.role === "assistant") {
         wrapper.innerHTML = `
           <div class="message-avatar assistant">
-            <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <i class="fa-solid fa-robot"></i>
           </div>
           <div class="message-content-wrapper">
             <div class="message-bubble assistant">${formatMessageContent(msg.content)}</div>
@@ -168,9 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="message-bubble user">${msg.content}</div>
           </div>
           <div class="message-avatar user">
-            <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+            <i class="fa-solid fa-user"></i>
           </div>
         `;
       }
@@ -205,8 +195,16 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="reference-title">${ref.title}</div>
               <div class="reference-authors">${ref.authors} • ${ref.journal} (${ref.year})</div>
               <div class="reference-links">
-                ${ref.doi ? `<a href="https://doi.org/${ref.doi}" target="_blank" class="reference-link">DOI <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></a>` : ""}
-                ${ref.pmid ? `<a href="https://pubmed.ncbi.nlm.nih.gov/${ref.pmid}" target="_blank" class="reference-link">PubMed <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></a>` : ""}
+                ${
+                  ref.doi
+                    ? `<a href="https://doi.org/${ref.doi}" target="_blank" class="reference-link">DOI <i class="icon-xs fa-solid fa-arrow-up-right-from-square"></i></a>`
+                    : ""
+                }
+                ${
+                  ref.pmid
+                    ? `<a href="https://pubmed.ncbi.nlm.nih.gov/${ref.pmid}" target="_blank" class="reference-link">PubMed <i class="icon-xs fa-solid fa-arrow-up-right-from-square"></i></a>`
+                    : ""
+                }
               </div>
             </div>
           </div>
@@ -221,14 +219,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return `
       <div class="feedback-buttons">
         <button class="feedback-btn ${msg.feedback === "positive" ? "active-positive" : ""}" data-feedback="positive" data-id="${msg.id}" title="도움이 되었습니다">
-          <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-          </svg>
+          <i class="fa-solid fa-thumbs-up"></i>
         </button>
         <button class="feedback-btn ${msg.feedback === "negative" ? "active-negative" : ""}" data-feedback="negative" data-id="${msg.id}" title="개선이 필요합니다">
-          <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
-          </svg>
+          <i class="fa-solid fa-thumbs-down"></i>
         </button>
       </div>
     `;
@@ -316,14 +310,12 @@ document.addEventListener("DOMContentLoaded", () => {
       messagesContent = document.getElementById("messagesContent");
     }
 
-    const loadingDiv = document.createElement("div");
-    loadingDiv.id = "loadingMessage";
-    loadingDiv.className = "loading-message";
-    loadingDiv.innerHTML = `
-      <div class="message-avatar assistant">
-        <svg style="width: 1.25rem; height: 1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
+  const loadingDiv = document.createElement("div");
+  loadingDiv.id = "loadingMessage";
+  loadingDiv.className = "loading-message";
+  loadingDiv.innerHTML = `
+    <div class="message-avatar assistant">
+        <i class="fa-solid fa-robot"></i>
       </div>
       <div class="message-bubble assistant">
         <div class="loading-dots">
@@ -380,13 +372,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const toggleIcon = document.getElementById("toggleIcon");
       if (!sidebar || !toggleIcon) return;
       sidebar.classList.toggle("closed");
-      if (sidebar.classList.contains("closed")) {
-        toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />';
-      } else {
-        toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
-      }
+      const isClosed = sidebar.classList.contains("closed");
+      toggleIcon.classList.toggle("fa-bars", isClosed);
+      toggleIcon.classList.toggle("fa-xmark", !isClosed);
     });
   }
+  (() => {
+    const sidebar = document.getElementById("chatSidebar");
+    const toggleIcon = document.getElementById("toggleIcon");
+    if (sidebar && toggleIcon) {
+      const isClosed = sidebar.classList.contains("closed");
+      toggleIcon.classList.toggle("fa-bars", isClosed);
+      toggleIcon.classList.toggle("fa-xmark", !isClosed);
+    }
+  })();
 
   const backToMainBtn = document.getElementById("backToMainBtn");
   if (backToMainBtn) {

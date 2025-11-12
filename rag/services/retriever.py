@@ -5,7 +5,16 @@ from typing import List, Optional
 
 from langchain_core.documents import Document
 
-from .embedder import get_embedding, get_pg_conn
+# 상대 import와 절대 import를 모두 지원 (Jupyter 노트북에서도 동작하도록)
+try:
+    from .embedder import get_embedding, get_pg_conn
+except ImportError:
+    # 상대 import가 실패하면 절대 import 시도 (패키지 외부에서 실행될 때)
+    try:
+        from rag.services.embedder import get_embedding, get_pg_conn
+    except ImportError:
+        # 같은 디렉토리에서 직접 실행될 때 (Jupyter 노트북 등)
+        from embedder import get_embedding, get_pg_conn
 
 
 @dataclass(slots=True)

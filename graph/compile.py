@@ -10,8 +10,11 @@ from graph.nodes.evaluate_chunk import evaluate_chunk
 from graph.nodes.rewrite_query import rewrite_query
 from graph.nodes.generate_answer import generate_answer
 
-def create_medical_rag_workflow(vectorstore=None):
-
+def create_medical_rag_workflow():
+    """
+    의료 RAG 워크플로우 생성
+    retrieval 노드는 내부적으로 VectorRetriever를 사용하여 DB에 접근
+    """
     workflow = StateGraph(SelfRAGState)
 
     def classify_quit(state: SelfRAGState) -> str:
@@ -29,21 +32,11 @@ def create_medical_rag_workflow(vectorstore=None):
             return "generate_answer"
         return "rewrite_query"
 
-    # --- vectorstore이 필요한 노드 wrapper ---
-    def retrieval_node(state: SelfRAGState):
-        if vectorstore is None:
-            # vectorstore가 없으면 빈 결과 반환
-            state["retrieved_docs"] = []
-            state["context"] = ""
-            state["sources"] = []
-            return state
-        return retrieval(state, vectorstore=vectorstore)
-
     # --- 노드 등록 ---
     workflow.add_node("classifier", classifier)
     workflow.add_node("medical_check", medical_check)
     workflow.add_node("web_search", web_search)
-    workflow.add_node("retrieval", retrieval_node)
+    workflow.add_node("retrieval", retrieval)
     workflow.add_node("evaluate_chunk", evaluate_chunk)
     workflow.add_node("rewrite_query", rewrite_query)
     workflow.add_node("generate_answer", generate_answer)

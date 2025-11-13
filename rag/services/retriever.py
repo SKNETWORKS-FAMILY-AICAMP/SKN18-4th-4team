@@ -55,7 +55,7 @@ class VectorRetriever:
             conn.close()
 
         docs: List[Document] = []
-        for doc_id, content, content, distance in rows:
+        for doc_id, content, distance in rows:
             similarity = 1.0 - float(distance) if distance is not None else None
             if threshold is not None and similarity is not None and similarity < threshold:
                 continue

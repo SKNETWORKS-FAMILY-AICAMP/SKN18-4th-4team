@@ -179,3 +179,23 @@ flowchart TD
 
 # Web
 
+```mermaid
+sequenceDiagram
+    participant U as User (브라우저)
+    participant J as chat.js
+    participant V as Django views.py
+    participant DB as PostgreSQL
+
+    U->>J: 메시지 입력
+    J->>V: POST /chat/api/conversations/<id>/messages/
+    V->>DB: Message insert + LLM 응답 저장
+    V-->>J: JSON({message:{id, role, content, citations}})
+    J-->>U: 메시지 + 참고문헌 렌더링
+
+    U->>J: 👍 클릭 (handleFeedback)
+    J->>V: PATCH /chat/api/messages/<id>/ {feedback:"positive"}
+    V->>DB: Message.feedback 업데이트
+    V-->>J: JSON({message:{feedback:"positive"}})
+    J-->>U: 피드백 버튼 색상 갱신
+```
+

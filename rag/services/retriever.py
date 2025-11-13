@@ -19,7 +19,7 @@ except ImportError:
 
 @dataclass(slots=True)
 class VectorRetriever:
-    table_name: str = "t3_chunks"
+    table_name: str = "medical"
     default_k: int = 5
     min_similarity: Optional[float] = None
 
@@ -38,8 +38,7 @@ class VectorRetriever:
         sql = f"""
             SELECT
                 id,
-                c_id,
-                chunk_text,
+                content,
                 embedding <=> %s AS distance
             FROM {self.table_name}
             WHERE embedding IS NOT NULL
@@ -56,17 +55,16 @@ class VectorRetriever:
             conn.close()
 
         docs: List[Document] = []
-        for doc_id, c_id, chunk_text, distance in rows:
+        for doc_id, content, content, distance in rows:
             similarity = 1.0 - float(distance) if distance is not None else None
             if threshold is not None and similarity is not None and similarity < threshold:
                 continue
 
             docs.append(
                 Document(
-                    page_content=chunk_text,
+                    page_content=content,
                     metadata={
                         "id": doc_id,
-                        "c_id": c_id,
                         "distance": float(distance),
                         "similarity": similarity,
                     },

@@ -50,7 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function refreshConversations({ preserveCurrent = true } = {}) {
     try {
-      const res = await fetch(conversationsUrl, { headers: { Accept: "application/json" } });
+      const res = await fetch(conversationsUrl, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error("Failed to load conversations");
       const data = await res.json();
       state.conversations = data.conversations || [];
@@ -87,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`${conversationBaseUrl}${conversationId}/`, {
         headers: { Accept: "application/json" },
+        credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed to load messages");
       const data = await res.json();
@@ -163,6 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`${conversationBaseUrl}${id}/`, {
         method: "DELETE",
+        credentials: "same-origin",
         headers: {
           "X-CSRFToken": getCsrfToken(),
           Accept: "application/json",
@@ -405,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(conversationsUrl, {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCsrfToken(),
@@ -456,6 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`${conversationBaseUrl}${state.currentConversationId}/messages/`, {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCsrfToken(),

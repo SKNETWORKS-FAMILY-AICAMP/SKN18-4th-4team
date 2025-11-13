@@ -3,8 +3,6 @@ djangorestframework
 django-environ
 psycopg2-binary
 gunicorn
-django-sass-processor
-libsass
 
 SQLAlchemy==2.0.43
 asyncmy>=0.2.10
@@ -23,6 +21,7 @@ langchain-community
 langchain-experimental
 langchain-openai
 langsmith
+langchain-postgres
 
 # LangGraph 패키지
 langgraph
@@ -52,3 +51,6 @@ sentencepiece
 peft
 #bitsandbytes
 hf_transfer
+
+# 테스트
+ipykernel

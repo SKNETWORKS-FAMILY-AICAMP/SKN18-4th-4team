@@ -9,7 +9,6 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
-from pgvector import Vector
 import psycopg2
 from pgvector.psycopg2 import register_vector
 load_dotenv()
@@ -60,4 +59,4 @@ def get_embedding(text: str):
         input=text,
     )
     vector = response.data[0].embedding
-    return Vector(vector)
+    return vector

@@ -1,0 +1,63 @@
+# nodes/retrieval.py
+from graph.state import SelfRAGState
+from rag.services.retriever import get_vector_retriever
+
+
+def retrieval(state: SelfRAGState) -> SelfRAGState:
+    """
+    Retrieval 노드
+    VectorRetriever를 사용하여 관련 문서 검색
+    """
+    query = state.get("question", "").strip()
+
+    # 시작 로그
+    print(f"• [Retrieve] start (top_k=5, query=\"{query[:50]}...\")")
+
+    try:
+        # VectorRetriever 인스턴스 가져오기
+        retriever = get_vector_retriever()
+
+        # 문서 검색 (상위 5개)
+        docs = retriever.search(query, top_k=5)
+
+        # 문서 정보 추출
+        retrieved_docs = []
+        context_parts = []
+        sources = []
+        seen_c_ids = set()  # 중복 체크용
+
+        for i, doc in enumerate(docs, 1):
+            # similarity는 metadata에 포함되어 있음
+            similarity = doc.metadata.get("similarity", 0.0)
+
+            doc_info = {
+                "content": doc.page_content,
+                "metadata": doc.metadata,
+                "score": similarity  # 유사도 점수 (1에 가까울수록 유사)
+            }
+            retrieved_docs.append(doc_info)
+
+            # 컨텍스트 구성
+            context_parts.append(f"[문서 {i}] (유사도: {similarity:.2f})\n{doc.page_content}")
+
+            # 출처 정보 - c_id 사용 (중복 제거)
+            c_id = doc.metadata.get("c_id", f"문서_{i}")
+            if c_id not in seen_c_ids:
+                sources.append(f"[{i}] {c_id}")
+                seen_c_ids.add(c_id)
+
+        state["retrieved_docs"] = retrieved_docs
+        state["context"] = "\n\n".join(context_parts)
+        state["sources"] = sources
+
+        # 완료 로그
+        print(f"• [Retrieve] complete (fetched={len(retrieved_docs)} docs)")
+
+    except Exception as e:
+        # 검색 실패 시
+        state["retrieved_docs"] = []
+        state["context"] = ""
+        state["sources"] = []
+        print(f"문서 검색 오류: {e}")
+
+    return state

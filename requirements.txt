@@ -1,0 +1,58 @@
+Django>=5.0,<6.0
+djangorestframework
+django-environ
+psycopg2-binary
+gunicorn
+django-sass-processor
+libsass
+
+SQLAlchemy==2.0.43
+asyncmy>=0.2.10
+pymysql==1.1.2
+pydantic==2.11.9
+pydantic-settings==2.10.1
+
+openai
+httpx
+tiktoken
+
+# LangChain 패키지
+langchain
+langchain-core
+langchain-community
+langchain-experimental
+langchain-openai
+langsmith
+langchain-postgres
+
+# LangGraph 패키지
+langgraph
+asyncpg
+psycopg[binary, pool]
+tiktoken
+transformers
+PyYAML
+
+# pg
+pgvector
+sqlalchemy
+psycopg2-binary
+
+# 임베딩/유틸
+sentence-transformers
+numpy==1.26.4
+
+# RAG 시스템 추가 의존성
+ragas
+datasets
+
+# llm
+accelerate
+torch==2.2.2
+sentencepiece
+peft
+#bitsandbytes
+hf_transfer
+
+# 테스트
+ipykernel

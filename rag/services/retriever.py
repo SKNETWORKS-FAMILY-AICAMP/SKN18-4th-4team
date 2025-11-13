@@ -39,10 +39,10 @@ class VectorRetriever:
             SELECT
                 id,
                 content,
-                embedding <=> %s AS distance
+                embedding <=> %s::vector AS distance
             FROM {self.table_name}
             WHERE embedding IS NOT NULL
-            ORDER BY embedding <=> %s
+            ORDER BY embedding <=> %s::vector
             LIMIT %s;
         """
 

@@ -31,6 +31,16 @@ docker compose -f infra/docker-compose.yml up -d
 # RAG
 - ETL
 
+   1. 전처리 ~ 임베딩 모듈화 실행코드
+
+      python -m rag.etl.embed.embed_runner
+
+- 질의응답(RAG)
+
+   1. 질의응답 실행코드
+   
+      python graph\ask.py
+
 
 
 

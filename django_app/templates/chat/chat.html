@@ -15,6 +15,7 @@
   data-user-email="{{ user_email }}"
   data-main-url="{{ main_url }}"
   data-logout-url="{{ logout_url }}"
+  data-conversations-url="{% url 'chat:conversation_list' %}"
 >
   <div id="chatSidebar" class="chat-sidebar">
     <div class="chat-sidebar-section chat-sidebar-section--header">
@@ -105,6 +106,12 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_data %}
+  {% if initial_conversations %}
+    {{ initial_conversations|json_script:"initialConversations" }}
+  {% endif %}
 {% endblock %}
 
 {% block extra_js %}

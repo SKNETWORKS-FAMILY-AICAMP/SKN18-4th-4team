@@ -26,14 +26,16 @@ def web_search(state: SelfRAGState) -> SelfRAGState:
         # 컨텍스트 구성
         context_parts = []
         sources = []
+        seen_urls = set()  # 중복 URL 체크용
 
         for i, result in enumerate(results, 1):
             content = result.get("content", "")
             url = result.get("url", "")
 
             context_parts.append(f"[출처 {i}] {content}")
-            if url:
-                sources.append(f"[{i}] {url}")  # 번호와 URL 함께 저장
+            if url and url not in seen_urls:
+                sources.append(f"[{i}] {url}")  # 중복 제거 후 번호와 URL 함께 저장
+                seen_urls.add(url)
 
         state["context"] = "\n\n".join(context_parts)
         state["sources"] = sources

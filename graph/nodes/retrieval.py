@@ -51,7 +51,7 @@ def retrieval(state: SelfRAGState) -> SelfRAGState:
         state["sources"] = sources
 
         # 완료 로그
-        print(f"• [Retrieve] complete (fetched={len(retrieved_docs)} docs)")
+        print(f"• [Retrieve] complete (총 {len(retrieved_docs)}개 chunk 검색 완료)")
 
     except Exception as e:
         # 검색 실패 시

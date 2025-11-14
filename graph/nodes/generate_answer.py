@@ -86,10 +86,11 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
 중요 작성 규칙:
 - 검색 결과에 있는 정보만 사용하세요
-- 답변 본문에 출처 번호([1], [2] 등)를 포함하지 마세요
+- **반드시 답변 내용 뒤에 출처 번호를 [1], [2] 형식으로 표시하세요**
+- 예시: "당뇨병은 혈당 조절에 문제가 생기는 질환입니다[1]."
 - 의학 정보는 신중하게 전달하세요
 - 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요
-- 번호나 구조화된 형식 없이 자연스러운 문장으로 작성하세요
+- 핵심 단어에 ** markdown 강조 표현을 적용하세요
         """
 
         res = client.chat.completions.create(
@@ -111,13 +112,6 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
         }
         state["llm_score"] = llm_score
 
-        # 답변 끝에 참고문서 목록 추가 (평문용)
-        if sources:
-            sources_text = "\n\n📚 참고문서:\n" + "\n".join(f"- {src}" for src in sources)
-            state["final_answer"] = answer + sources_text
-        else:
-            state["final_answer"] = answer
-
     # 4. RAG 문서 기반 답변 (answer_rag 로직)
     else:
         prompt = f"""
@@ -127,7 +121,10 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 {context}
 
 위 문서를 근거로 사용자 질문에 대해 정확하고 자연스럽게 답변해주세요.
-핵심 내용을 먼저 설명하고, 필요한 경우 상세 설명과 주의사항을 이어서 작성하세요.
+
+답변 구조:
+1. **반드시 첫 1-2문장으로 핵심 요약을 먼저 작성하세요**
+2. 그 다음 상세 설명과 주의사항을 이어서 작성하세요
 
 중요 작성 규칙:
 - 문서에 있는 정보만 사용하세요
@@ -135,6 +132,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 - 의학 정보는 신중하고 정확하게 전달하세요
 - 추측하지 말고 문서 내용에 충실하세요
 - 번호나 구조화된 형식 없이 자연스러운 문장으로 작성하세요
+- 핵심 단어에 ** markdown 강조 표현을 적용하세요
         """
 
         res = client.chat.completions.create(

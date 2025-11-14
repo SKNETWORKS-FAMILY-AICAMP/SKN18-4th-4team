@@ -112,13 +112,6 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
         }
         state["llm_score"] = llm_score
 
-        # 답변 끝에 참고문서 목록 추가 (평문용)
-        if sources:
-            sources_text = "\n\n📚 참고문서:\n" + "\n".join(f"- {src}" for src in sources)
-            state["final_answer"] = answer + sources_text
-        else:
-            state["final_answer"] = answer
-
     # 4. RAG 문서 기반 답변 (answer_rag 로직)
     else:
         prompt = f"""

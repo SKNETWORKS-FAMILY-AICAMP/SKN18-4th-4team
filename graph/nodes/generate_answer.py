@@ -86,10 +86,11 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
 중요 작성 규칙:
 - 검색 결과에 있는 정보만 사용하세요
+- **반드시 답변 내용 뒤에 출처 번호를 [1], [2] 형식으로 표시하세요**
+- 예시: "당뇨병은 혈당 조절에 문제가 생기는 질환입니다[1]."
 - 의학 정보는 신중하게 전달하세요
 - 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요
-- 번호나 구조화된 형식 없이 자연스러운 문장으로 작성하세요
-- 핵심 단어에 ** markdown 강조 표현을 적용하세요.
+- 핵심 단어에 ** markdown 강조 표현을 적용하세요
         """
 
         res = client.chat.completions.create(
@@ -135,7 +136,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 - 의학 정보는 신중하고 정확하게 전달하세요
 - 추측하지 말고 문서 내용에 충실하세요
 - 번호나 구조화된 형식 없이 자연스러운 문장으로 작성하세요
-- 핵심 단어에 ** markdown 강조 표현을 적용하세요.
+- 핵심 단어에 ** markdown 강조 표현을 적용하세요
         """
 
         res = client.chat.completions.create(

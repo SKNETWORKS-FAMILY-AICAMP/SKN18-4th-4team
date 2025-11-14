@@ -120,6 +120,8 @@ class Message(models.Model):
     model_name = models.CharField(max_length=120, blank=True)
     tokens_prompt = models.IntegerField(null=True, blank=True)
     tokens_completion = models.IntegerField(null=True, blank=True)
+    llm_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    relevance_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
 
     # RAG/툴/참고문헌
     citations = models.JSONField(null=True, blank=True)  # [{"title":..., "doi":..., "pubmed":...}]

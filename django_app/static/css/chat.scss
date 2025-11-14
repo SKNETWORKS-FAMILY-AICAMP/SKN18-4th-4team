@@ -243,6 +243,13 @@
   margin-bottom: 0.5rem;
 }
 
+.reference-title {
+  word-break: break-all;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .reference-item {
   margin-top: 0.5rem;
   color: $text-muted;
@@ -265,6 +272,18 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+
+  &:hover {
+    color: #1d4ed8;
+  }
+}
+
+.reference-url-link {
+  color: $brand-blue-dark;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     color: #1d4ed8;
@@ -554,6 +573,68 @@
   color: $text-muted;
   font-size: 0.9rem;
   line-height: 1.4;
+}
+
+.feedback-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.feedback-modal__content {
+  background: white;
+  width: 90vw;
+  max-width: 28rem;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+}
+
+.feedback-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+
+  label {
+    font-size: 0.9rem;
+    color: $text-muted;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  input[type="radio"] {
+    accent-color: $brand-blue;
+  }
+}
+
+.feedback-textarea {
+  width: 100%;
+  min-height: 4rem;
+  border: 1px solid $border-default;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.feedback-textarea-wrapper.hidden {
+  display: none;
+}
+
+.feedback-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .chat-messages-area::-webkit-scrollbar {

@@ -3,6 +3,7 @@
 """
 import os
 import sys
+import json
 from dotenv import load_dotenv
 
 # 프로젝트 루트 디렉토리를 Python 경로에 추가
@@ -88,12 +89,15 @@ def main():
             # 워크플로우 실행
             result = medical_app.invoke({"question": question})
 
-            # 결과 출력
-            print("\n" + "=" * 60)
-            print(" 답변")
-            print("=" * 60)
-            print(result.get('final_answer', '답변을 생성하지 못했습니다.'))
-            print("=" * 60 + "\n")
+            # JSON 형태 답변 출력
+            if 'structured_answer' in result and result['structured_answer']:
+                print("\n" + "=" * 60)
+                print(" 답변")
+                print("=" * 60)
+                print(json.dumps(result['structured_answer'], ensure_ascii=False, indent=2))
+                print("=" * 60 + "\n")
+            else:
+                print("\n⚠️  답변을 생성하지 못했습니다.\n")
 
         except KeyboardInterrupt:
             print("\n\n프로그램을 종료합니다. 감사합니다!")

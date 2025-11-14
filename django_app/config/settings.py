@@ -146,3 +146,4 @@ SASS_PROCESSOR_ROOT = BASE_DIR / 'static'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+CHAT_USE_FAKE_COMPILE = env.bool("CHAT_USE_FAKE_COMPILE", default=False)

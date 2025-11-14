@@ -27,9 +27,10 @@ def create_medical_rag_workflow():
         """검색된 문서의 관련성 평가 후 분기"""
         if state.get("is_relevant", False):
             return "generate_answer"
-        # 이미 한 번 재작성했으면 더 이상 재작성하지 않고 답변 생성
+        # rewrite 후에도 관련성 있는 chunk를 찾지 못한 경우 END로 이동
         if state.get("rewrite_count", 0) >= 1:
-            return "generate_answer"
+            # is_relevant가 False면 (관련성이 낮으면) END로 이동
+            return END
         return "rewrite_query"
 
     # --- 노드 등록 ---
@@ -75,13 +76,16 @@ def create_medical_rag_workflow():
     workflow.add_edge("retrieval", "evaluate_chunk")
 
     # 5. Evaluate Chunk 다음 경로 (조건부 엣지)
-    # - is_relevant가 True면 generate_answer로, False면 rewrite_query로
+    # - is_relevant가 True면 generate_answer로
+    # - rewrite 후 chunk가 없으면 END로
+    # - 그 외에는 rewrite_query로
     workflow.add_conditional_edges(
         "evaluate_chunk",
         evaluate_relevance,
         {
             "generate_answer": "generate_answer",
-            "rewrite_query": "rewrite_query"
+            "rewrite_query": "rewrite_query",
+            END: END
         }
     )
 

@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
-from .models import ChatConversation, Message
-from .services import generate_ai_response
+from .models import ChatConversation, Message, MessageFeedback
+from .services import generate_ai_response, summarize_conversation_title
 
 
 QUICK_TEMPLATES_PATH = Path(__file__).resolve().parent / "data" / "quick_templates.json"
@@ -75,7 +75,14 @@ def _serialize_conversation(conversation: ChatConversation) -> dict:
     }
 
 
-def _serialize_message(message: Message) -> dict:
+def _serialize_message(message: Message, user=None) -> dict:
+    reason_code = ""
+    reason_text = ""
+    if user and user.is_authenticated:
+        entry = message.feedback_entries.filter(user=user).first()
+        if entry:
+            reason_code = entry.reason_code or ""
+            reason_text = entry.reason_text or ""
     return {
         "id": str(message.id),
         "role": message.role,
@@ -84,6 +91,8 @@ def _serialize_message(message: Message) -> dict:
         "citations": message.citations or [],
         "feedback": message.feedback or "",
         "metadata": message.metadata or {},
+        "feedback_reason_code": reason_code,
+        "feedback_reason_text": reason_text,
     }
 
 def index(request):
@@ -211,7 +220,7 @@ def conversation_detail(request, conversation_id):
 
     # 4. 그 외(GET 등) 요청이면 대화 정보와 메시지 목록 반환
     # 대화 내 모든 메시지를 직렬화하여 반환
-    messages = [_serialize_message(msg) for msg in conversation.messages.all()]
+    messages = [_serialize_message(msg, request.user) for msg in conversation.messages.all()]
     return JsonResponse(
         {
             "conversation": _serialize_conversation(conversation),
@@ -273,7 +282,7 @@ def conversation_messages(request, conversation_id):
         return JsonResponse(
             {
                 "messages": [
-                    _serialize_message(user_message),
+                    _serialize_message(user_message, request.user),
                 ],
                 "error": str(exc),
             },
@@ -288,12 +297,67 @@ def conversation_messages(request, conversation_id):
     )
     conversation.update_activity(preview=ai_text)
 
+    if not conversation.title or conversation.title == ChatConversation.DEFAULT_TITLE:
+        try:
+            summary = summarize_conversation_title(content)
+            conversation.title = summary
+            conversation.save(update_fields=["title"])
+        except Exception as exc:
+            # 요약 실패 시 로그만 남기고 계속 진행
+            print(f"[title summarize error] {exc}")
+
     return JsonResponse(
         {
             "messages": [
-                _serialize_message(user_message),
-                _serialize_message(assistant_message),
+                _serialize_message(user_message, request.user),
+                _serialize_message(assistant_message, request.user),
             ]
         },
         status=201,
     )
+
+
+def message_feedback(request, message_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "unauthorized"}, status=401)
+
+    if request.method != "PATCH":
+        return JsonResponse({"error": "method_not_allowed"}, status=405)
+
+    message = get_object_or_404(
+        Message,
+        id=message_id,
+        conversation__created_by=request.user,
+    )
+
+    payload = json.loads(request.body or "{}")
+    feedback = (payload.get("feedback") or "").strip()
+    if feedback not in ("positive", "negative", ""):
+        return JsonResponse({"error": "invalid_feedback"}, status=400)
+
+    message.feedback = feedback
+    message.save(update_fields=["feedback"])
+
+    if feedback == "positive":
+        MessageFeedback.objects.update_or_create(
+            message=message,
+            user=request.user,
+            defaults={"reason_code": "positive", "reason_text": ""},
+        )
+    elif feedback == "negative":
+        reason_code = payload.get("reason_code") or ""
+        valid_codes = {choice[0] for choice in MessageFeedback.REASON_CHOICES if choice[0] != "positive"}
+        if reason_code not in valid_codes:
+            return JsonResponse({"error": "invalid_reason"}, status=400)
+        reason_text = (payload.get("reason_text") or "").strip()
+        if reason_code == "other" and not reason_text:
+            return JsonResponse({"error": "reason_text_required"}, status=400)
+        MessageFeedback.objects.update_or_create(
+            message=message,
+            user=request.user,
+            defaults={"reason_code": reason_code, "reason_text": reason_text},
+        )
+    else:
+        MessageFeedback.objects.filter(message=message, user=request.user).delete()
+
+    return JsonResponse({"message": _serialize_message(message, request.user)})

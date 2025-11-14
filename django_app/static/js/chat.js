@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutUrl = root.dataset.logoutUrl || "";
   const conversationsUrl = root.dataset.conversationsUrl || "/chat/api/conversations/";
   const conversationBaseUrl = conversationsUrl.endsWith("/") ? conversationsUrl : `${conversationsUrl}/`;
+  const messageFeedbackBaseUrl = "/chat/api/messages/";
 
   const state = {
     conversations: [],
@@ -14,12 +15,21 @@ document.addEventListener("DOMContentLoaded", () => {
     isSending: false,
     isMessagesLoading: false,
     activeStreamIntervals: [],
+    pendingFeedbackMessageId: null,
   };
 
   const user = {
     name: root.dataset.userName || "게스트 연구자",
     email: root.dataset.userEmail || "research@example.com",
   };
+
+  const feedbackModal = document.getElementById("feedbackModal");
+  const feedbackForm = document.getElementById("feedbackForm");
+  const feedbackTextarea = document.getElementById("feedbackReasonText");
+  const feedbackTextareaWrapper = document.getElementById("feedbackTextareaWrapper");
+  const feedbackCancelBtn = document.getElementById("feedbackCancelBtn");
+  const feedbackSubmitBtn = document.getElementById("feedbackSubmitBtn");
+  const feedbackRemoveBtn = document.getElementById("feedbackRemoveBtn");
 
   initUserProfile(user);
   hydrateInitialConversations();
@@ -381,29 +391,35 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderFeedbackButtons(msg) {
     return `
       <div class="feedback-buttons">
-        <button class="feedback-btn ${msg.feedback === "positive" ? "active-positive" : ""}" data-feedback="positive" data-id="${msg.id}" title="도움이 되었습니다">
+        <button class="feedback-btn ${msg.feedback === "positive" ? "active-positive" : ""}" data-feedback="positive" data-message-id="${msg.id}" title="도움이 되었습니다">
           <i class="fa-solid fa-thumbs-up"></i>
         </button>
-        <button class="feedback-btn ${msg.feedback === "negative" ? "active-negative" : ""}" data-feedback="negative" data-id="${msg.id}" title="개선이 필요합니다">
+        <button class="feedback-btn ${msg.feedback === "negative" ? "active-negative" : ""}" data-feedback="negative" data-message-id="${msg.id}" title="개선이 필요합니다">
           <i class="fa-solid fa-thumbs-down"></i>
         </button>
       </div>
     `;
   }
 
-  function handleFeedback(messageId, feedback) {
+  /**
+   * handleFeedback 함수는 메시지에 대한 피드백(좋아요/싫어요) 버튼 클릭 이벤트를 처리합니다.
+   * @param {string|number} messageId - 피드백할 메시지의 ID
+   * @param {"positive"|"negative"} feedbackType - 피드백 종류(positive: 좋아요, negative: 싫어요)
+   */
+  function handleFeedback(messageId, feedbackType) {
+    // 현재 메시지 목록을 불러옴
     const messages = getCurrentMessages();
-    const updated = messages.map((msg) => {
-      if (msg.id === messageId) {
-        return {
-          ...msg,
-          feedback: msg.feedback === feedback ? "" : feedback,
-        };
-      }
-      return msg;
-    });
-    state.messagesCache[state.currentConversationId] = updated;
-    renderMessages();
+    // 대상 메시지 객체를 검색
+    const target = messages.find((msg) => msg.id === messageId);
+    if (!target) return;
+
+    if (feedbackType === "positive") {
+      const nextValue = target.feedback === "positive" ? "" : "positive";
+      submitFeedback(messageId, nextValue, nextValue === "positive" ? "positive" : "", "");
+    } else {
+      // '싫어요'를 누르면 상세 사유 입력 모달 오픈
+      openFeedbackModal(messageId, target);
+    }
   }
 
   async function createConversation(title = "") {
@@ -596,6 +612,25 @@ document.addEventListener("DOMContentLoaded", () => {
         chatInput.focus();
       });
     });
+
+    if (feedbackCancelBtn) {
+      feedbackCancelBtn.addEventListener("click", () => closeFeedbackModal());
+    }
+    if (feedbackSubmitBtn) {
+      feedbackSubmitBtn.addEventListener("click", submitNegativeFeedback);
+    }
+    if (feedbackRemoveBtn) {
+      feedbackRemoveBtn.addEventListener("click", async () => {
+        if (!state.pendingFeedbackMessageId) return closeFeedbackModal();
+        await submitFeedback(state.pendingFeedbackMessageId, "");
+        closeFeedbackModal();
+      });
+    }
+    if (feedbackForm) {
+      feedbackForm.querySelectorAll("input[name='feedbackReason']").forEach((radio) => {
+        radio.addEventListener("change", updateFeedbackTextareaVisibility);
+      });
+    }
   }
 
   function formatDate(dateString) {
@@ -621,5 +656,91 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     return "";
+  }
+
+  async function submitFeedback(messageId, feedback, reasonCode = "", reasonText = "") {
+    if (!messageId || !state.currentConversationId) return;
+    try {
+      const res = await fetch(`${messageFeedbackBaseUrl}${messageId}/feedback/`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrfToken(),
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ feedback, reason_code: reasonCode, reason_text: reasonText }),
+      });
+      if (!res.ok) throw new Error("feedback_failed");
+      const data = await res.json();
+      const updated = data.message;
+      const newMessages = getCurrentMessages().map((msg) =>
+        msg.id === updated.id ? { ...msg, ...updated } : msg
+      );
+      state.messagesCache[state.currentConversationId] = newMessages;
+      renderMessages();
+    } catch (err) {
+      console.error(err);
+      alert("피드백을 저장하지 못했습니다.");
+    }
+  }
+
+  function openFeedbackModal(messageId, messageData = {}) {
+    if (!feedbackModal) return;
+    state.pendingFeedbackMessageId = messageId;
+    feedbackModal.classList.remove("hidden");
+    if (feedbackForm) {
+      const code = messageData.feedback_reason_code || "";
+      feedbackForm.querySelectorAll("input[name='feedbackReason']").forEach((radio) => {
+        radio.checked = radio.value === code;
+      });
+    }
+    if (feedbackTextarea) {
+      feedbackTextarea.value = messageData.feedback_reason_text || "";
+    }
+    updateFeedbackTextareaVisibility();
+  }
+
+  function closeFeedbackModal() {
+    if (!feedbackModal) return;
+    feedbackModal.classList.add("hidden");
+    state.pendingFeedbackMessageId = null;
+    if (feedbackForm) {
+      feedbackForm.querySelectorAll("input[name='feedbackReason']").forEach((radio) => {
+        radio.checked = false;
+      });
+    }
+    if (feedbackTextarea) feedbackTextarea.value = "";
+    updateFeedbackTextareaVisibility();
+  }
+
+  function updateFeedbackTextareaVisibility() {
+    if (!feedbackForm || !feedbackTextareaWrapper) return;
+    const otherSelected = !!feedbackForm.querySelector("input[name='feedbackReason'][value='other']:checked");
+    if (otherSelected) {
+      feedbackTextareaWrapper.classList.remove("hidden");
+    } else {
+      feedbackTextareaWrapper.classList.add("hidden");
+    }
+  }
+
+  async function submitNegativeFeedback() {
+    if (!state.pendingFeedbackMessageId) return;
+    if (!feedbackForm) return;
+    const selected = feedbackForm.querySelector("input[name='feedbackReason']:checked");
+    if (!selected) {
+      alert("사유를 선택해 주세요.");
+      return;
+    }
+    let reasonText = "";
+    if (selected.value === "other") {
+      reasonText = (feedbackTextarea?.value || "").trim();
+      if (!reasonText) {
+        alert("기타 사유를 입력해 주세요.");
+        return;
+      }
+    }
+    await submitFeedback(state.pendingFeedbackMessageId, "negative", selected.value, reasonText);
+    closeFeedbackModal();
   }
 });

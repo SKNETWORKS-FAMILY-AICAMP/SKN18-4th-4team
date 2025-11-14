@@ -5,11 +5,13 @@
 """
 
 import random
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
 
-from django.conf import settings
+from .llm import get_llm
 from langchain_core.messages import AIMessage
-from langchain_openai import ChatOpenAI
+
+if TYPE_CHECKING:
+    from langchain_openai import ChatOpenAI
 
 _REFERENCE_POOL = [
     {
@@ -57,7 +59,7 @@ def _generate_fake_citations() -> List[Dict]:
 
 
 class FakeCompileLLM:
-    def __init__(self, llm: ChatOpenAI):
+    def __init__(self, llm: "ChatOpenAI"):
         self.llm = llm
 
     def invoke(self, messages):
@@ -71,12 +73,4 @@ class FakeCompileLLM:
 
 
 def build():
-    """
-    LangGraph compile 대체용 빌더.
-    LangChain OpenAI(ChatOpenAI) 인스턴스를 FakeCompileLLM로 감싸 반환한다.
-    """
-    api_key = getattr(settings, "OPENAI_API_KEY", None)
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY 설정이 필요합니다.")
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2, api_key=api_key)
-    return FakeCompileLLM(llm)
+    return FakeCompileLLM(get_llm())

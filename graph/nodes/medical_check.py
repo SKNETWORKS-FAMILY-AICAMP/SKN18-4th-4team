@@ -1,7 +1,6 @@
 # nodes/medical_check.py
 from openai import OpenAI
 from graph.state import SelfRAGState
-from graph.state import SelfRAGState
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 

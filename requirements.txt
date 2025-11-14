@@ -48,7 +48,7 @@ datasets
 
 # llm
 accelerate
-torch==2.2.2
+torch>=2.6
 sentencepiece
 peft
 #bitsandbytes

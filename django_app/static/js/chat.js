@@ -358,12 +358,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!citations || !citations.length) return "";
     let html = '<div class="references-box"><div class="references-title">📚 참고문헌</div>';
     citations.forEach((ref) => {
+      const urlLink = typeof ref.title === "string" && /^https?:\/\//.test(ref.title)
+        ? ref.title
+        : typeof ref.url === "string" && /^https?:\/\//.test(ref.url)
+          ? ref.url
+          : "";
       html += `
         <div class="reference-item">
           <div class="reference-item-header">
             <span class="reference-number">[${ref.id ?? ""}]</span>
             <div class="reference-content">
-              <div class="reference-title">${ref.title || ""}</div>
+              <div class="reference-title">
+                ${ref.title || ""}
+                ${
+                  urlLink
+                    ? `<a href="${urlLink}" target="_blank" rel="noopener" class="reference-url-link" title="새 창에서 열기">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                      </a>`
+                    : ""
+                }
+              </div>
               <div class="reference-authors">
                 ${(ref.authors || "") + (ref.journal ? ` • ${ref.journal}` : "")} ${ref.year ? `(${ref.year})` : ""}
               </div>

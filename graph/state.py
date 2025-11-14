@@ -28,7 +28,9 @@ class SelfRAGState(TypedDict):
     rewrite_count: int  # 쿼리 재작성 횟수
 
     # 최종 결과
-    final_answer: str  # 최종 답변 (출처 포함)
+    final_answer: str  # 최종 답변 (출처 포함) - 평문용
+    structured_answer: Dict[str, Any]  # JSON 구조화된 답변
+    llm_score: float  # LLM 자체 신뢰도 점수 (0.0-1.0)
 
     # 대화 이력
     conversation_history: Dict[str, str]  # 이전 대화 메시지 리스트

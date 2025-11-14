@@ -23,7 +23,7 @@ class HFModelClient:
         return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 client = OpenAI() # env의 LLM_PROVIDER를 읽어서 판단
-# clinet = HFModelClient() # 허깅페이스
+# client = HFModelClient() # 허깅페이스
 
 
 def classifier(state: SelfRAGState) -> SelfRAGState:

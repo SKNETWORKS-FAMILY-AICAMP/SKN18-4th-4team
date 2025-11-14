@@ -106,6 +106,29 @@
     </div>
   </div>
 </div>
+
+<div id="feedbackModal" class="feedback-modal hidden">
+  <div class="feedback-modal__content">
+    <h3>무엇이 문제였나요?</h3>
+    <form id="feedbackForm">
+      <div class="feedback-options">
+        <label><input type="radio" name="feedbackReason" value="incorrect_fact" /> 사실과 다름 (Incorrect Fact)</label>
+        <label><input type="radio" name="feedbackReason" value="wrong_reference" /> 참고문헌/가이드라인이 틀림 (Wrong Reference)</label>
+        <label><input type="radio" name="feedbackReason" value="too_vague" /> 너무 모호함 (Too vague)</label>
+        <label><input type="radio" name="feedbackReason" value="misunderstood" /> 질문을 이해 못함 (Misunderstood question)</label>
+        <label><input type="radio" name="feedbackReason" value="other" /> 기타 (Other)</label>
+      </div>
+      <div id="feedbackTextareaWrapper" class="feedback-textarea-wrapper hidden">
+        <textarea id="feedbackReasonText" class="feedback-textarea" placeholder="기타 사유를 입력하세요"></textarea>
+      </div>
+      <div class="feedback-modal__actions">
+        <button type="button" id="feedbackCancelBtn" class="btn btn-secondary">취소</button>
+        <button type="button" id="feedbackRemoveBtn" class="btn btn-secondary">피드백 삭제</button>
+        <button type="button" id="feedbackSubmitBtn" class="btn btn-primary">제출</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_data %}

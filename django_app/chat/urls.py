@@ -15,4 +15,9 @@ urlpatterns = [
         views.conversation_messages,
         name="conversation_messages",
     ),
+    path(
+        "api/messages/<int:message_id>/feedback/",
+        views.message_feedback,
+        name="message_feedback",
+    ),
 ]

@@ -148,3 +148,27 @@ class Message(models.Model):
         else:
             self.feedback = value or ""
         self.save(update_fields=["feedback"])
+
+
+class MessageFeedback(models.Model):
+    REASON_CHOICES = [
+        ("positive", "좋아요"),
+        ("incorrect_fact", "사실과 다름"),
+        ("wrong_reference", "참고문헌 오기"),
+        ("too_vague", "모호함"),
+        ("misunderstood", "질문을 이해 못함"),
+        ("other", "기타"),
+    ]
+
+    message = models.ForeignKey(Message, related_name="feedback_entries", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    reason_code = models.CharField(max_length=32, choices=REASON_CHOICES, blank=True)
+    reason_text = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("message", "user")
+
+    def __str__(self):
+        return f"Feedback({self.reason_code}) on message {self.message_id}"

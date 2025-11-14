@@ -277,7 +277,7 @@ def conversation_messages(request, conversation_id):
 
     # 6. AI 응답 생성 및 저장
     try:
-        ai_text, citations = generate_ai_response(conversation, content)
+        ai_text, citations, scores = generate_ai_response(conversation, content)
     except Exception as exc:  # LLM 호출 실패
         return JsonResponse(
             {
@@ -294,6 +294,8 @@ def conversation_messages(request, conversation_id):
         role="assistant",
         content=ai_text,
         citations=citations,
+        llm_score=scores.get("llm_score") if isinstance(scores, dict) else None,
+        relevance_score=scores.get("relevance_score") if isinstance(scores, dict) else None,
     )
     conversation.update_activity(preview=ai_text)
 

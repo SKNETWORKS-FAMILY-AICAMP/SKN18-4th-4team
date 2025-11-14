@@ -2,9 +2,13 @@
 from openai import OpenAI
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+import os
+
+# 환경 변수에서 LLM_PROVIDER 읽기
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # 기본값 'openai'
 
 class HFModelClient:
-    def __init__(self, model_name: str = "aaditya/Llama3‑OpenBioLLM‑8B"):
+    def __init__(self, model_name: str = "aaditya/Llama3-OpenBioLLM-8B"):
         # 허깅페이스 모델 로딩
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
@@ -19,8 +23,13 @@ class HFModelClient:
         # 출력 텍스트 디코딩
         return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-client = OpenAI() # env의 LLM_PROVIDER를 읽어서 판단
-# client = HFModelClient()
+# LLM_PROVIDER에 따라 클라이언트 초기화
+if LLM_PROVIDER == "openai":
+    client = OpenAI()  # OpenAI 클라이언트
+elif LLM_PROVIDER == "huggingface":
+    client = HFModelClient()  # Hugging Face 클라이언트
+else:
+    raise ValueError(f"지원되지 않는 LLM_PROVIDER: {LLM_PROVIDER}")
 
 def evaluate_chunk(state):
     """
@@ -56,14 +65,15 @@ def evaluate_chunk(state):
     이유: [간단한 설명]`
     """
 
-    res = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    # res = client.chat(prompt)
+    if LLM_PROVIDER == "openai":
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",  # 원하는 모델 이름을 설정
+            messages=[{"role": "user", "content": prompt}]
+        )
+    elif LLM_PROVIDER == "huggingface":
+        res = client.chat(prompt)  # Hugging Face 클라이언트를 사용할 경우
 
-    result = res.choices[0].message.content.strip()
-    # result = res.??? # 메시지 출력 확인
+    result = res.choices[0].message.content.strip() if LLM_PROVIDER == "openai" else res.strip()
 
     # 관련성 평가 결과 파싱
     if "높음" in result:

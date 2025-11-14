@@ -3,6 +3,10 @@ from openai import OpenAI
 from graph.state import SelfRAGState
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import os
+
+# 환경 변수에서 LLM_PROVIDER 읽기
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # 기본값 'openai'
 
 class HFModelClient:
     def __init__(self, model_name: str = "aaditya/Llama3-OpenBioLLM-8B"):
@@ -28,8 +32,13 @@ class HFModelClient:
         result = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         return result.strip()
 
-client = OpenAI() # env의 LLM_PROVIDER를 읽어서 판단
-# client = HFModelClient()
+# LLM_PROVIDER에 따라 클라이언트 초기화
+if LLM_PROVIDER == "openai":
+    client = OpenAI()
+elif LLM_PROVIDER == "huggingface":
+    client = HFModelClient()
+else:
+    raise ValueError(f"지원되지 않는 LLM_PROVIDER: {LLM_PROVIDER}")
 
 def calculate_llm_score(answer: str, context: str, relevance_score: float) -> float:
     """
@@ -118,14 +127,15 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 - 핵심 단어에 ** markdown 강조 표현을 적용하세요
         """
 
-        res = client.chat.completions.create(
-            model="gpt-5-nano",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        # res = client.chat(prompt)
-
-        answer = res.choices[0].message.content.strip()
-        # answer = res.??? # 메시지 출력 확인
+        # LLM 호출
+        if LLM_PROVIDER == "openai":
+            res = client.chat.completions.create(
+                model="gpt-5-nano",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            answer = res.choices[0].message.content.strip()
+        elif LLM_PROVIDER == "huggingface":
+            answer = client.chat(prompt)
 
         # LLM 신뢰도 점수 계산
         llm_score = calculate_llm_score(answer, context, state.get("relevance_score", 0.0))

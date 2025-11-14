@@ -2,6 +2,10 @@
 from openai import OpenAI
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+import os
+
+# 환경 변수 기반 LLM 선택
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
 
 class HFModelClient:
     def __init__(self, model_name: str = "aaditya/Llama3-OpenBioLLM-8B"):
@@ -26,8 +30,13 @@ class HFModelClient:
 
         return self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
-client = OpenAI() # env의 LLM_PROVIDER를 읽어서 판단
-# client = HFModelClient()
+# LLM_PROVIDER에 따라 클라이언트 선택
+if LLM_PROVIDER == "openai":
+    client = OpenAI()
+elif LLM_PROVIDER == "huggingface":
+    client = HFModelClient()
+else:
+    raise ValueError(f"지원되지 않는 LLM_PROVIDER: {LLM_PROVIDER}")
 
 def rewrite_query(state):
     """
@@ -61,14 +70,15 @@ def rewrite_query(state):
     재작성된 질문만 출력하세요.
     """
 
-    res = client.chat.completions.create(
-        model="gpt-5-nano",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    # res = client.chat(prompt, max_new_tokens=150)
-
-    rewritten = res.choices[0].message.content.strip()
-    # rewritten = res.??? # 허깅페이스 메세지 출력 확인
+    # LLM 호출
+    if LLM_PROVIDER == "openai":
+        res = client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        rewritten = res.choices[0].message.content.strip()
+    elif LLM_PROVIDER == "huggingface":
+        rewritten = client.chat(prompt, max_new_tokens=150)
 
     # 재작성된 질문을 question 필드에 업데이트
     state["rewritten_question"] = rewritten

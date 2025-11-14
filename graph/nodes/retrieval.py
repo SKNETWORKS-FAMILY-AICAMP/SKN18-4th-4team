@@ -43,7 +43,7 @@ def retrieval(state: SelfRAGState) -> SelfRAGState:
             # 출처 정보 - c_id 사용 (중복 제거)
             c_id = doc.metadata.get("c_id", f"문서_{i}")
             if c_id not in seen_c_ids:
-                sources.append(f"[{i}] {c_id}")
+                sources.append(c_id)  # c_id만 저장 (번호 제거)
                 seen_c_ids.add(c_id)
 
         state["retrieved_docs"] = retrieved_docs

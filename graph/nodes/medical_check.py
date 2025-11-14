@@ -1,8 +1,36 @@
 # nodes/medical_check.py
 from openai import OpenAI
 from graph.state import SelfRAGState
+from graph.state import SelfRAGState
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
-client = OpenAI()
+class HFModelClient:
+    def __init__(self, model_name: str = "aaditya/Llama3-OpenBioLLM-8B"):
+        print("• [HFModel] Loading model... (This may take some time)")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map="auto",
+            torch_dtype=torch.bfloat16
+        )
+        print("• [HFModel] Model loaded successfully.")
+
+    def chat(self, prompt: str, max_new_tokens: int = 300) -> str:
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+
+        outputs = self.model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=True,
+            temperature=0.3,
+        )
+
+        result = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return result.strip()
+
+client = OpenAI() # env의 LLM_PROVIDER를 읽어서 판단
+# client = HFModelClient()
 
 
 def medical_check(state: SelfRAGState) -> SelfRAGState:
@@ -36,8 +64,10 @@ def medical_check(state: SelfRAGState) -> SelfRAGState:
         model="gpt-5-nano",
         messages=[{"role": "user", "content": prompt}]
     )
+    # res = client.chat(prompt)
 
     result = res.choices[0].message.content.strip()
+    # result = res.??? # 메시지 출력 확인
 
     if "용어" in result:
         state["is_terminology"] = True

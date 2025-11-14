@@ -33,7 +33,7 @@ def web_search(state: SelfRAGState) -> SelfRAGState:
 
             context_parts.append(f"[출처 {i}] {content}")
             if url:
-                sources.append(url)  # URL만 저장 (번호 제거)
+                sources.append(f"[{i}] {url}")  # 번호와 URL 함께 저장
 
         state["context"] = "\n\n".join(context_parts)
         state["sources"] = sources

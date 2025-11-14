@@ -47,15 +47,15 @@ def evaluate_chunk(state):
     # 관련성 평가 결과 파싱
     if "높음" in result:
         state["is_relevant"] = True
-        state["relevance_score"] = 0.8  # 기본값
+        state["relevance_score"] = 0.80  # 기본값
     else:
         state["is_relevant"] = False
-        state["relevance_score"] = 0.3  # 기본값
+        state["relevance_score"] = 0.30  # 기본값
     # 점수 추출 시도
     if "점수:" in result:
         try:
             score_part = result.split("점수:")[1].split("\n")[0].strip()
-            state["relevance_score"] = float(score_part)
+            state["relevance_score"] = round(float(score_part), 2)  # 소수점 2자리
         except:
             pass
 

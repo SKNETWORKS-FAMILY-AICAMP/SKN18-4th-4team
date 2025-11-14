@@ -1,8 +1,35 @@
 # nodes/generate_answer.py
+import json
 from openai import OpenAI
 from graph.state import SelfRAGState
 
 client = OpenAI()
+
+
+def calculate_llm_score(answer: str, context: str, relevance_score: float) -> float:
+    """
+    LLM 신뢰도 점수 계산
+    - 관련성 점수 기반
+    - 답변 길이 평가 (너무 짧으면 감점)
+    """
+    # 기본 점수는 관련성 점수에서 시작
+    base_score = relevance_score if relevance_score > 0 else 0.70
+
+    # 답변 길이 평가 (너무 짧으면 감점)
+    answer_length = len(answer)
+    if answer_length < 50:
+        length_penalty = 0.20
+    elif answer_length < 100:
+        length_penalty = 0.10
+    else:
+        length_penalty = 0.0
+
+    # 최종 점수 계산
+    final_score = base_score - length_penalty
+
+    # 0.0 ~ 1.0 범위로 제한하고 소수점 2자리로 반올림
+    return round(max(0.0, min(1.0, final_score)), 2)
+
 
 def generate_answer(state: SelfRAGState) -> SelfRAGState:
     """
@@ -54,17 +81,15 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 검색된 정보:
 {context}
 
-위 정보를 바탕으로 사용자 질문에 대해 정확하고 간결하게 답변해주세요.
-답변은 다음 형식으로 작성하세요:
+위 정보를 바탕으로 사용자 질문에 대해 정확하고 자연스럽게 답변해주세요.
+핵심 내용을 먼저 설명하고, 필요한 경우 상세 설명을 이어서 작성하세요.
 
-1. 핵심 답변 (2-3문장)
-2. 상세 설명 (필요시)
-
-주의사항:
+중요 작성 규칙:
 - 검색 결과에 있는 정보만 사용하세요
-- 출처 번호([출처 1], [출처 2] 등)를 포함하여 답변하세요
+- 답변 본문에 출처 번호([1], [2] 등)를 포함하지 마세요
 - 의학 정보는 신중하게 전달하세요
-- 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요.
+- 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요
+- 번호나 구조화된 형식 없이 자연스러운 문장으로 작성하세요
         """
 
         res = client.chat.completions.create(
@@ -74,9 +99,21 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
         answer = res.choices[0].message.content.strip()
 
-        # 출처 추가
+        # LLM 신뢰도 점수 계산
+        llm_score = calculate_llm_score(answer, context, state.get("relevance_score", 0.0))
+
+        # JSON 구조화된 답변 생성
+        state["structured_answer"] = {
+            "answer": answer,
+            "references": sources,  # sources 리스트 그대로 사용
+            "llm_score": llm_score,
+            "relevance_score": round(state.get("relevance_score", 0.0), 2)
+        }
+        state["llm_score"] = llm_score
+
+        # 답변 끝에 참고문서 목록 추가 (평문용)
         if sources:
-            sources_text = "\n\n📚 출처:\n" + "\n".join(sources)
+            sources_text = "\n\n📚 참고문서:\n" + "\n".join(f"- {src}" for src in sources)
             state["final_answer"] = answer + sources_text
         else:
             state["final_answer"] = answer
@@ -89,19 +126,15 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 관련 문서:
 {context}
 
-위 문서를 근거로 사용자 질문에 대해 정확하고 상세하게 답변해주세요.
+위 문서를 근거로 사용자 질문에 대해 정확하고 자연스럽게 답변해주세요.
+핵심 내용을 먼저 설명하고, 필요한 경우 상세 설명과 주의사항을 이어서 작성하세요.
 
-답변 형식:
-1. 핵심 답변 (2-3문장)
-2. 상세 설명
-3. 주의사항 (필요시)
-
-# 작성 규칙:
+중요 작성 규칙:
 - 문서에 있는 정보만 사용하세요
-- 문서 번호([문서 1], [문서 2] 등)를 인용하세요
+- 답변 본문에 문서 번호([1], [2] 등)를 포함하지 마세요
 - 의학 정보는 신중하고 정확하게 전달하세요
 - 추측하지 말고 문서 내용에 충실하세요
-- 참고 문서에서 1-5 번까지 띄울 때 이전번호에서 나온 참고문서와 중복이면 이후에 나온 참고문서는 삭제해주세요.
+- 번호나 구조화된 형식 없이 자연스러운 문장으로 작성하세요
         """
 
         res = client.chat.completions.create(
@@ -111,12 +144,17 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
         answer = res.choices[0].message.content.strip()
 
-        # 참고 문서 추가
-        if sources:
-            sources_text = "\n\n📚 참고 문서:\n" + "\n".join(sources)
-            state["final_answer"] = answer + sources_text
-        else:
-            state["final_answer"] = answer
+        # LLM 신뢰도 점수 계산
+        llm_score = calculate_llm_score(answer, context, state.get("relevance_score", 0.0))
+
+        # JSON 구조화된 답변 생성
+        state["structured_answer"] = {
+            "answer": answer,
+            "references": sources,  # sources 리스트 그대로 사용
+            "llm_score": llm_score,
+            "relevance_score": round(state.get("relevance_score", 0.0), 2)
+        }
+        state["llm_score"] = llm_score
 
     # 완료 로그
     answer_len = len(state.get("final_answer", ""))

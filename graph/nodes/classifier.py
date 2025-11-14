@@ -9,9 +9,14 @@ def classifier(state: SelfRAGState) -> SelfRAGState:
     """
     Classifier 노드
     사용자 질문이 의학 관련 여부를 판별
+    원본 질문을 original_question에 저장
     """
 
     query = state.get("question", "").strip()
+
+    # 원본 질문 저장 (처음 입력받은 질문)
+    if "original_question" not in state:
+        state["original_question"] = query
 
     # 시작 로그
     print(f"• [Classifier] start (question=\"{query[:50]}...\")")

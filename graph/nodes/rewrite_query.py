@@ -1,7 +1,33 @@
 # nodes/rewrite_query.py
 from openai import OpenAI
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
-client = OpenAI()
+class HFModelClient:
+    def __init__(self, model_name: str = "aaditya/Llama3-OpenBioLLM-8B"):
+        print("• [HFModel] Loading model for QueryRewrite...")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map="auto",
+            torch_dtype=torch.bfloat16
+        )
+        print("• [HFModel] Model loaded (rewrite_query).")
+
+    def chat(self, prompt: str, max_new_tokens: int = 200) -> str:
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+
+        outputs = self.model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=True,
+            temperature=0.3,
+        )
+
+        return self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+
+client = OpenAI() # env의 LLM_PROVIDER를 읽어서 판단
+# client = HFModelClient()
 
 def rewrite_query(state):
     """
@@ -39,8 +65,10 @@ def rewrite_query(state):
         model="gpt-5-nano",
         messages=[{"role": "user", "content": prompt}]
     )
+    # res = client.chat(prompt, max_new_tokens=150)
 
     rewritten = res.choices[0].message.content.strip()
+    # rewritten = res.??? # 허깅페이스 메세지 출력 확인
 
     # 재작성된 질문을 question 필드에 업데이트
     state["rewritten_question"] = rewritten

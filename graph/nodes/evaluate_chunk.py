@@ -10,15 +10,28 @@ def evaluate_chunk(state):
     """
     query = state.get("question", "").strip()
     context = state.get("context", "")
+    retrieved_count = len(state.get("retrieved_docs", []))
 
     # 시작 로그
     context_len = len(context)
-    print(f"• [EvaluateChunk] start (query=\"{query[:50]}...\", context_chars={context_len})")
+    print(f"• [EvaluateChunk] start (총 {retrieved_count}개 chunk, context_chars={context_len}, query=\"{query[:50]}...\")")
 
     if not query or not context:
         state["relevance_score"] = 0.0
         state["is_relevant"] = False
-        print(f"• [EvaluateChunk] complete (is_relevant=False, score=0.0)")
+
+        # rewrite 후에도 chunk를 찾지 못한 경우
+        if state.get("rewrite_count", 0) >= 1:
+            state["final_answer"] = "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다."
+            state["structured_answer"] = {
+                "answer": "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다.",
+                "sources": [],
+                "confidence": 0.0
+            }
+            print(f"• [EvaluateChunk] complete (검색된 chunk: 0개, 의미있는 chunk: 0개, rewrite 후 chunk 없음 - END로 이동)")
+        else:
+            print(f"• [EvaluateChunk] complete (검색된 chunk: 0개, 의미있는 chunk: 0개, score=0.0)")
+
         return state
 
     prompt = f"""
@@ -61,7 +74,19 @@ def evaluate_chunk(state):
 
     state["evaluation_result"] = result
 
+    # rewrite 후에도 관련성 있는 chunk를 찾지 못한 경우
+    if not state["is_relevant"] and state.get("rewrite_count", 0) >= 1:
+        state["final_answer"] = "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다."
+        state["structured_answer"] = {
+            "answer": "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다.",
+            "sources": [],
+            "confidence": 0.0
+        }
+        print(f"• [EvaluateChunk] complete (검색된 chunk: {retrieved_count}개, 의미있는 chunk: 0개, rewrite 후 관련성 낮음 - END로 이동)")
+        return state
+
     # 완료 로그
-    print(f"• [EvaluateChunk] complete (is_relevant={state['is_relevant']}, score={state['relevance_score']})")
+    meaningful_count = retrieved_count if state['is_relevant'] else 0
+    print(f"• [EvaluateChunk] complete (검색된 chunk: {retrieved_count}개, 의미있는 chunk: {meaningful_count}개, score={state['relevance_score']})")
 
     return state

@@ -113,6 +113,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 - 의학 정보는 신중하게 전달하세요
 - 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요
 - 핵심 단어에 ** markdown 강조 표현을 적용하세요
+- ** 절대로 답변 마지막에 참고 출처를 사용하지 마세요.
         """
 
         res = client.chat.completions.create(

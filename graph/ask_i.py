@@ -65,20 +65,19 @@ def print_memory_info(result):
     Args:
         result: 워크플로우 실행 결과
     """
-    conv_history = result.get("conversation_history", {})
-    count = conv_history.get("count", "0")
-    facts = conv_history.get("facts", [])
+    # 새로운 List[Dict[str, str]] 형식
+    conv_history = result.get("conversation_history", [])
 
-    if count != "0":
+    if conv_history:
+        # 대화 턴 수 계산 (user + assistant = 1턴)
+        turn_count = len(conv_history) // 2
         print("\n💾 메모리 정보:")
-        print(f"   - 불러온 대화: {count}개")
-        if facts:
-            print(f"   - 저장된 facts: {len(facts)}개")
-            # facts 미리보기 (최대 3개)
-            for i, fact in enumerate(facts[:3], 1):
-                print(f"     {i}. {fact}")
-            if len(facts) > 3:
-                print(f"     ... 외 {len(facts) - 3}개")
+        print(f"   - 불러온 대화: {turn_count}턴 ({len(conv_history)}개 메시지)")
+
+        # 가장 최근 대화 미리보기
+        if len(conv_history) >= 2:
+            print(f"   - 최근 질문: {conv_history[0].get('content', '')[:50]}...")
+            print(f"   - 최근 답변: {conv_history[1].get('content', '')[:50]}...")
 
 
 def main():

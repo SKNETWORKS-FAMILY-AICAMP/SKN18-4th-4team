@@ -20,4 +20,9 @@ urlpatterns = [
         views.message_feedback,
         name="message_feedback",
     ),
+    path(
+        "api/messages/<int:message_id>/concept-graph/",
+        views.message_concept_graph,
+        name="message_concept_graph",
+    ),
 ]

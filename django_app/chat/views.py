@@ -91,6 +91,7 @@ def _serialize_message(message: Message, user=None) -> dict:
         "citations": message.citations or [],
         "feedback": message.feedback or "",
         "metadata": message.metadata or {},
+        "reference_type": message.reference_type or (message.metadata or {}).get("reference_type") or "",
         "feedback_reason_code": reason_code,
         "feedback_reason_text": reason_text,
     }
@@ -277,7 +278,7 @@ def conversation_messages(request, conversation_id):
 
     # 6. AI 응답 생성 및 저장
     try:
-        ai_text, citations, scores = generate_ai_response(conversation, content)
+        ai_text, citations, scores, reference_type = generate_ai_response(conversation, content)
     except Exception as exc:  # LLM 호출 실패
         return JsonResponse(
             {
@@ -289,6 +290,7 @@ def conversation_messages(request, conversation_id):
             status=201,
         )
 
+    metadata = {"reference_type": reference_type} if reference_type else {}
     assistant_message = Message.objects.create(
         conversation=conversation,
         role="assistant",
@@ -296,6 +298,8 @@ def conversation_messages(request, conversation_id):
         citations=citations,
         llm_score=scores.get("llm_score") if isinstance(scores, dict) else None,
         relevance_score=scores.get("relevance_score") if isinstance(scores, dict) else None,
+        metadata=metadata or None,
+        reference_type=reference_type or "",
     )
     conversation.update_activity(preview=ai_text)
 

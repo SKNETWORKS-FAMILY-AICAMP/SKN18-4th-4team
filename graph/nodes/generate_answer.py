@@ -1,9 +1,31 @@
 # nodes/generate_answer.py
 import json
+import re
 from openai import OpenAI
 from graph.state import SelfRAGState
 
 client = OpenAI()
+
+
+def extract_used_references(answer: str, sources: list) -> list:
+    """
+    답변에서 실제로 사용된 출처 번호를 찾아서 해당하는 sources만 반환
+    예: 답변에 [1], [3]이 있으면 sources[0], sources[2]만 반환
+    """
+    if not sources:
+        return []
+
+    # 답변에서 [숫자] 패턴 찾기
+    used_numbers = set(re.findall(r'\[(\d+)\]', answer))
+
+    # 사용된 번호에 해당하는 sources만 필터링
+    filtered_sources = []
+    for num_str in sorted(used_numbers, key=int):
+        num = int(num_str)
+        if 1 <= num <= len(sources):
+            filtered_sources.append(sources[num - 1])  # 인덱스는 0부터 시작
+
+    return filtered_sources
 
 
 def calculate_llm_score(answer: str, context: str, relevance_score: float) -> float:
@@ -91,6 +113,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 - 의학 정보는 신중하게 전달하세요
 - 긴 문서들은 간단하게 요약하여 중요 정보들만 전달해주세요
 - 핵심 단어에 ** markdown 강조 표현을 적용하세요
+- ** 절대로 답변 마지막에 참고 출처를 사용하지 마세요.
         """
 
         res = client.chat.completions.create(
@@ -103,10 +126,13 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
         # LLM 신뢰도 점수 계산
         llm_score = calculate_llm_score(answer, context, state.get("relevance_score", 0.0))
 
+        # 답변에서 실제로 사용된 출처만 추출
+        used_references = extract_used_references(answer, sources)
+
         # JSON 구조화된 답변 생성
         state["structured_answer"] = {
             "answer": answer,
-            "references": sources,  # sources 리스트 그대로 사용
+            "references": used_references,  # 실제 사용된 출처만 포함
             "llm_score": llm_score,
             "relevance_score": round(state.get("relevance_score", 0.0), 2)
         }
@@ -148,7 +174,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
         # JSON 구조화된 답변 생성
         state["structured_answer"] = {
             "answer": answer,
-            "references": sources,  # sources 리스트 그대로 사용
+            "references": sources,  # RAG는 답변에 번호 미사용, 전체 출처 포함
             "llm_score": llm_score,
             "relevance_score": round(state.get("relevance_score", 0.0), 2)
         }

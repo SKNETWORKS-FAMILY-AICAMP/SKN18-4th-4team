@@ -105,6 +105,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
         # JSON 구조화된 답변 생성
         state["structured_answer"] = {
+            "type": "external",
             "answer": answer,
             "references": sources,  # sources 리스트 그대로 사용
             "llm_score": llm_score,
@@ -147,6 +148,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
         # JSON 구조화된 답변 생성
         state["structured_answer"] = {
+            "type": "internal",
             "answer": answer,
             "references": sources,  # sources 리스트 그대로 사용
             "llm_score": llm_score,

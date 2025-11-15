@@ -259,7 +259,14 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div class="message-content-wrapper">
             <div class="message-bubble assistant">${formatMessageContent(msg.content)}</div>
-            ${msg.citations ? renderReferences(msg.citations) : ""}
+            ${
+              msg.citations
+                ? renderReferences(
+                    msg.citations,
+                    msg.reference_type || msg.metadata?.reference_type || "internal"
+                  )
+                : ""
+            }
             ${renderFeedbackButtons(msg)}
           </div>
         `;
@@ -354,15 +361,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
   }
 
-  function renderReferences(citations) {
+  function renderReferences(citations, referenceType = "internal") {
     if (!citations || !citations.length) return "";
-    let html = '<div class="references-box"><div class="references-title">📚 참고문헌</div>';
+    const label = referenceType === "external" ? "참고 링크" : "참고 문헌";
+    let html = `<div class="references-box"><div class="references-title">📚 ${label}</div>`;
     citations.forEach((ref) => {
-      const urlLink = typeof ref.title === "string" && /^https?:\/\//.test(ref.title)
-        ? ref.title
-        : typeof ref.url === "string" && /^https?:\/\//.test(ref.url)
-          ? ref.url
-          : "";
+      const titleText = typeof ref.title === "string" ? ref.title : "";
+      const urlMatch = titleText.match(/https?:\/\/\S+/);
+      const urlFromTitle = urlMatch ? urlMatch[0] : "";
+      const urlLink = urlFromTitle
+        || (typeof ref.url === "string" && /^https?:\/\//.test(ref.url) ? ref.url : "");
       html += `
         <div class="reference-item">
           <div class="reference-item-header">

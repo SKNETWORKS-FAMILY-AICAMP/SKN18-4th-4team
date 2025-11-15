@@ -52,12 +52,13 @@ def _get_graph_app():
     return _graph_app
 
 
-def _format_citations(raw_result: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _format_citations(raw_result: Dict[str, Any]) -> tuple[List[Dict[str, Any]], str]:
     """
     LangGraph state에서 전달된 reference 정보를 프론트엔드가 기대하는 포맷으로 변환.
     """
     structured = raw_result.get("structured_answer") or {}
     references = structured.get("references") or raw_result.get("sources") or []
+    reference_type = structured.get("type") or raw_result.get("type") or "internal"
     formatted = []
     for idx, ref in enumerate(references, 1):
         if isinstance(ref, dict):
@@ -84,7 +85,7 @@ def _format_citations(raw_result: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "authors": "",
                 }
             )
-    return formatted
+    return formatted, reference_type
 
 
 def _extract_scores(raw_result: Dict[str, Any]) -> Dict[str, Any]:
@@ -116,7 +117,7 @@ def _build_history(conversation: ChatConversation) -> list:
     return messages
 
 
-def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[str, list, dict]:
+def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[str, list, dict, str]:
     """
     LangGraph RAG 워크플로우를 호출하여 답변과 참고문헌 정보를 생성한다.
     """
@@ -131,7 +132,7 @@ def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[s
         content = response.content if hasattr(response, "content") else str(response)
         metadata = getattr(response, "additional_kwargs", {}) or {}
         citations = metadata.get("citations", [])
-        return content, citations, {"llm_score": None, "relevance_score": None}
+        return content, citations, {"llm_score": None, "relevance_score": None}, "internal"
 
     app = _get_graph_app()
     result_state = app.invoke({"question": prompt})
@@ -141,9 +142,9 @@ def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[s
         or structured.get("answer")
         or "죄송합니다. 답변을 생성하지 못했습니다."
     )
-    citations = _format_citations(result_state)
+    citations, reference_type = _format_citations(result_state)
     scores = _extract_scores(result_state)
-    return content, citations, scores
+    return content, citations, scores, reference_type
 
 
 def summarize_conversation_title(prompt: str) -> str:

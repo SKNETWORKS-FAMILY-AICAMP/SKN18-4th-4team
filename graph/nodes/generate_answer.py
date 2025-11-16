@@ -44,6 +44,9 @@ def filter_and_renumber_sources(answer: str, sources: list) -> tuple:
                 source_dict = dict(source) if isinstance(source, dict) else {"title": str(source)}
                 source_text = source_dict.get("title", str(source))
 
+            # 기존 번호 제거 (예: "[1] URL" -> "URL")
+            source_text = re.sub(r'^\[\d+\]\s*', '', source_text)
+
             # "[번호] 출처" 형식으로 저장
             filtered_sources.append(f"[{new_num}] {source_text}")
 

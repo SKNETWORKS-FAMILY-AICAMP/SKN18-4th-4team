@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const conversationsUrl = root.dataset.conversationsUrl || "/chat/api/conversations/";
   const conversationBaseUrl = conversationsUrl.endsWith("/") ? conversationsUrl : `${conversationsUrl}/`;
   const messageFeedbackBaseUrl = "/chat/api/messages/";
+  const conceptGraphBaseUrl = "/chat/api/messages/";
 
   const state = {
     conversations: [],
@@ -30,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedbackCancelBtn = document.getElementById("feedbackCancelBtn");
   const feedbackSubmitBtn = document.getElementById("feedbackSubmitBtn");
   const feedbackRemoveBtn = document.getElementById("feedbackRemoveBtn");
-
   initUserProfile(user);
   hydrateInitialConversations();
   renderChatHistory();
@@ -253,21 +253,34 @@ document.addEventListener("DOMContentLoaded", () => {
       wrapper.className = `message-wrapper ${msg.role}`;
 
       if (msg.role === "assistant") {
+        const shouldHideGraph =
+          !msg.citations ||
+          !msg.citations.length ||
+          (msg.content || "").includes("답변을 생성하지 못했습니다");
+        const referencesHtml = msg.citations
+          ? renderReferences(
+              msg.citations,
+              msg.reference_type || msg.metadata?.reference_type || "internal"
+            )
+          : "";
         wrapper.innerHTML = `
           <div class="message-avatar assistant">
             <i class="fa-solid fa-robot"></i>
           </div>
           <div class="message-content-wrapper">
             <div class="message-bubble assistant">${formatMessageContent(msg.content)}</div>
-            ${
-              msg.citations
-                ? renderReferences(
-                    msg.citations,
-                    msg.reference_type || msg.metadata?.reference_type || "internal"
-                  )
-                : ""
-            }
-            ${renderFeedbackButtons(msg)}
+            ${referencesHtml}
+            <div class="message-footer">
+              ${renderFeedbackButtons(msg)}
+              ${
+                shouldHideGraph
+                  ? ""
+                  : `<button class="message-graph-btn" type="button" data-message-id="${msg.id}">
+                      <i class="fa-solid fa-diagram-project"></i>
+                      그래프 그리기
+                    </button>`
+              }
+            </div>
           </div>
         `;
       } else {
@@ -289,6 +302,10 @@ document.addEventListener("DOMContentLoaded", () => {
             handleFeedback(msg.id, btn.dataset.feedback);
           });
         });
+        const graphBtn = wrapper.querySelector(".message-graph-btn");
+        if (graphBtn) {
+          graphBtn.addEventListener("click", () => handleGraphButtonClick(graphBtn, msg.id));
+        }
       }
     });
 
@@ -764,5 +781,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     await submitFeedback(state.pendingFeedbackMessageId, "negative", selected.value, reasonText);
     closeFeedbackModal();
+  }
+
+  async function handleGraphButtonClick(button, messageId) {
+    if (!button || !messageId) return;
+    button.disabled = true;
+    button.classList.add("graph-btn-loading");
+    if (window.chatGraph && typeof window.chatGraph.showLoading === "function") {
+      window.chatGraph.showLoading();
+    }
+    try {
+      const graphCode = await fetchConceptGraph(messageId);
+      if (window.chatGraph && typeof window.chatGraph.open === "function") {
+        window.chatGraph.open(graphCode);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("그래프를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      if (window.chatGraph && typeof window.chatGraph.close === "function") {
+        window.chatGraph.close();
+      }
+    } finally {
+      button.disabled = false;
+      button.classList.remove("graph-btn-loading");
+    }
+  }
+
+  async function fetchConceptGraph(messageId) {
+    const url = `${conceptGraphBaseUrl}${messageId}/concept-graph/`;
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "graph_fetch_failed");
+    }
+    const data = await res.json();
+    return data.graph || "";
   }
 });

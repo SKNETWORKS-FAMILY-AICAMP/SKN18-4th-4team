@@ -14,10 +14,10 @@ def _safe_reverse(name: str, default: str) -> str:
 
 def index(request):
     user = request.user
-    message_qs = Message.objects.filter(conversation__is_archived=False)
-    total_messages = message_qs.count()
+    message_qs = Message.objects.filter(conversation__is_archived=False, role="assistant")
+    feedback_total = message_qs.exclude(feedback="").count()
     positive_feedback = message_qs.filter(feedback="positive").count()
-    ai_accuracy = (positive_feedback / total_messages * 100) if total_messages else 0
+    ai_accuracy = (positive_feedback / feedback_total * 100) if feedback_total else 0
 
     relevance_avg = (
         message_qs.filter(relevance_score__isnull=False).aggregate(avg=Avg("relevance_score"))["avg"] or 0
@@ -32,7 +32,7 @@ def index(request):
 
     dashboard_stats = {
         "total_papers": 9686,
-        "total_research_questions": total_messages,
+        "total_research_questions": message_qs.count(),
         "ai_answer_accuracy": ai_accuracy,
         "rag_matching_rate": relevance_avg,
         "internal_usage_rate": internal_ratio,

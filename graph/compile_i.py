@@ -2,13 +2,13 @@ from langgraph.graph import StateGraph, END
 
 # 노드 함수 import
 from graph.state_i import SelfRAGState
-from graph.nodes.classifier_i import classifier_i
+from graph.nodes.classifier_i import classifier
 from graph.nodes.medical_check import medical_check
 from graph.nodes.web_search import web_search
 from graph.nodes.retrieval import retrieval
-from graph.nodes.evaluate_chunk import evaluate_chunk
-from graph.nodes.rewrite_query import rewrite_query
-from graph.nodes.generate_answer_i import generate_answer_i
+from graph.nodes.evaluate_chunk_i import evaluate_chunk
+from graph.nodes.rewrite_query_i import rewrite_query
+from graph.nodes.generate_answer_i import generate_answer
 from graph.nodes.memory_i import memory_read, memory_write
 
 def create_medical_rag_workflow():
@@ -46,13 +46,13 @@ def create_medical_rag_workflow():
 
     # --- 노드 등록 ---
     workflow.add_node("memory_read", memory_read)
-    workflow.add_node("classifier", classifier_i)
+    workflow.add_node("classifier", classifier)
     workflow.add_node("medical_check", medical_check)
     workflow.add_node("web_search", web_search)
     workflow.add_node("retrieval", retrieval)
     workflow.add_node("evaluate_chunk", evaluate_chunk)
     workflow.add_node("rewrite_query", rewrite_query)
-    workflow.add_node("generate_answer", generate_answer_i)
+    workflow.add_node("generate_answer", generate_answer)
     workflow.add_node("memory_write", memory_write)
 
     # --- 시작점 설정 ---

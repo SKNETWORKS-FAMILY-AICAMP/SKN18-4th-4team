@@ -208,6 +208,38 @@
   gap: 0.5rem;
 }
 
+.message-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.message-graph-btn {
+  border: 1px solid $brand-blue;
+  color: $brand-blue;
+  background: white;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover {
+    background: $brand-blue;
+    color: white;
+  }
+
+  &.graph-btn-loading {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
 .message-bubble {
   // padding: 0.75rem 1rem;
   border-radius: 1rem;
@@ -591,7 +623,7 @@
 
 .feedback-modal__content {
   background: white;
-  width: 90vw;
+  width: 90%;
   max-width: 28rem;
   border-radius: 0.75rem;
   padding: 1.5rem;

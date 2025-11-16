@@ -127,6 +127,7 @@ class Message(models.Model):
         blank=True,
         help_text="참고자료 종류 (internal/external 등)",
     )
+    concept_graph = models.TextField(blank=True)
 
     # RAG/툴/참고문헌
     citations = models.JSONField(null=True, blank=True)  # [{"title":..., "doi":..., "pubmed":...}]

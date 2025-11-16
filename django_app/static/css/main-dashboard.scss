@@ -50,13 +50,20 @@
   font-weight: 700;
   line-height: 1;
   color: $text-primary;
+  text-align: right;
 }
 
 .stat-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
+}
+
+.stat-title {
+  font-size: 16px;
+  color: #555;
+  font-weight: bold;
 }
 
 .stat-chip {
@@ -81,10 +88,10 @@
 }
 
 .stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  font-size: 20px;
+  width: 3.3rem;
+  height: 3.3rem;
+  border-radius: 10px;
+  font-size: 26px;
   @include flex-center;
 }
 
@@ -92,9 +99,15 @@
   width: 3rem;
   height: 3rem;
   border-radius: 0.5rem;
-  margin-bottom: 1rem;
   font-size: 20px;
   @include flex-center;
+}
+
+.feature-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .brand-badge,
@@ -107,9 +120,15 @@
   font-size: 1.25rem;
 }
 
+.brand-badge__image {
+  width: 100%;
+  height: 100%;
+}
+
 .brand-title {
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   color: $text-primary;
+  line-height: 2rem;
 }
 
 .brand-subtitle,
@@ -144,7 +163,7 @@
 
 .feature-title {
   color: $text-primary;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
 .card--padded,

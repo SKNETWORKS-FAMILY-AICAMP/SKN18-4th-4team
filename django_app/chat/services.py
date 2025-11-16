@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover - django 미설치 환경
 
 from .fake_compile import build as fake_build
 from .llm import get_llm
-from .models import ChatConversation
+from .models import ChatConversation, Message
 
 # Django 앱(django_app)보다 한 단계 위에 있는 프로젝트 루트를 파이썬 경로에 추가
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -159,3 +159,26 @@ def summarize_conversation_title(prompt: str) -> str:
     response = llm.invoke(messages)
     content = response.content if hasattr(response, "content") else str(response)
     return content.strip()[:120] or "새로운 대화"
+
+
+def generate_concept_graph(message: Message) -> str:
+    """
+    주어진 AI 응답 메시지를 기반으로 Mermaid 그래프 코드를 생성한다.
+    """
+    llm = get_llm()
+    system_prompt = SystemMessage(
+        content=(
+            "너는 Mermaid graph 전문가다. "
+            "사용자 메시지를 분석해 핵심 개념 간 관계를 flowchart로 표현해라. "
+            "항상 ``` 없이 순수한 Mermaid 코드만 반환하고, graph LR 형식을 사용한다."
+        )
+    )
+    user_prompt = HumanMessage(
+        content=(
+            "다음 AI 응답을 기반으로 주요 개념/원인의 흐름을 Mermaid flowchart로 만들어줘.\n\n"
+            f"AI 응답:\n{message.content}"
+        )
+    )
+    response = llm.invoke([system_prompt, user_prompt])
+    graph_code = response.content if hasattr(response, "content") else str(response)
+    return graph_code.strip()

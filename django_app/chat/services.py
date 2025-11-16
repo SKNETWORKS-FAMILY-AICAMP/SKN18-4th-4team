@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover - django 미설치 환경
 
 from .fake_compile import build as fake_build
 from .llm import get_llm
-from .models import ChatConversation
+from .models import ChatConversation, Message
 
 # Django 앱(django_app)보다 한 단계 위에 있는 프로젝트 루트를 파이썬 경로에 추가
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -52,12 +52,13 @@ def _get_graph_app():
     return _graph_app
 
 
-def _format_citations(raw_result: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _format_citations(raw_result: Dict[str, Any]) -> tuple[List[Dict[str, Any]], str]:
     """
     LangGraph state에서 전달된 reference 정보를 프론트엔드가 기대하는 포맷으로 변환.
     """
     structured = raw_result.get("structured_answer") or {}
     references = structured.get("references") or raw_result.get("sources") or []
+    reference_type = structured.get("type") or raw_result.get("type") or "internal"
     formatted = []
     for idx, ref in enumerate(references, 1):
         if isinstance(ref, dict):
@@ -84,7 +85,7 @@ def _format_citations(raw_result: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "authors": "",
                 }
             )
-    return formatted
+    return formatted, reference_type
 
 
 def _extract_scores(raw_result: Dict[str, Any]) -> Dict[str, Any]:
@@ -116,7 +117,7 @@ def _build_history(conversation: ChatConversation) -> list:
     return messages
 
 
-def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[str, list, dict]:
+def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[str, list, dict, str]:
     """
     LangGraph RAG 워크플로우를 호출하여 답변과 참고문헌 정보를 생성한다.
     """
@@ -131,7 +132,7 @@ def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[s
         content = response.content if hasattr(response, "content") else str(response)
         metadata = getattr(response, "additional_kwargs", {}) or {}
         citations = metadata.get("citations", [])
-        return content, citations, {"llm_score": None, "relevance_score": None}
+        return content, citations, {"llm_score": None, "relevance_score": None}, "internal"
 
     app = _get_graph_app()
     result_state = app.invoke({"question": prompt})
@@ -141,9 +142,9 @@ def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[s
         or structured.get("answer")
         or "죄송합니다. 답변을 생성하지 못했습니다."
     )
-    citations = _format_citations(result_state)
+    citations, reference_type = _format_citations(result_state)
     scores = _extract_scores(result_state)
-    return content, citations, scores
+    return content, citations, scores, reference_type
 
 
 def summarize_conversation_title(prompt: str) -> str:
@@ -158,3 +159,26 @@ def summarize_conversation_title(prompt: str) -> str:
     response = llm.invoke(messages)
     content = response.content if hasattr(response, "content") else str(response)
     return content.strip()[:120] or "새로운 대화"
+
+
+def generate_concept_graph(message: Message) -> str:
+    """
+    주어진 AI 응답 메시지를 기반으로 Mermaid 그래프 코드를 생성한다.
+    """
+    llm = get_llm()
+    system_prompt = SystemMessage(
+        content=(
+            "너는 Mermaid graph 전문가다. "
+            "사용자 메시지를 분석해 핵심 개념 간 관계를 flowchart로 표현해라. "
+            "항상 ``` 없이 순수한 Mermaid 코드만 반환하고, graph LR 형식을 사용한다."
+        )
+    )
+    user_prompt = HumanMessage(
+        content=(
+            "다음 AI 응답을 기반으로 주요 개념/원인의 흐름을 Mermaid flowchart로 만들어줘.\n\n"
+            f"AI 응답:\n{message.content}"
+        )
+    )
+    response = llm.invoke([system_prompt, user_prompt])
+    graph_code = response.content if hasattr(response, "content") else str(response)
+    return graph_code.strip()

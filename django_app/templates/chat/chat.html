@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% sass_src 'css/chat.scss' %}">
+<link rel="stylesheet" href="{% sass_src 'css/chat_graph.scss' %}">
 {% endblock %}
 
 {% block content %}
@@ -107,6 +108,8 @@
   </div>
 </div>
 
+{% include "chat/chat_graph.html" %}
+
 <div id="feedbackModal" class="feedback-modal hidden">
   <div class="feedback-modal__content">
     <h3>무엇이 문제였나요?</h3>
@@ -138,5 +141,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false });
+</script>
+<script src="{% static 'js/chat_graph.js' %}" defer></script>
 <script src="{% static 'js/chat.js' %}" defer></script>
 {% endblock %}

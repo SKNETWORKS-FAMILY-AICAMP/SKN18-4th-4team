@@ -5,9 +5,10 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .models import ChatConversation, Message, MessageFeedback
-from .services import generate_ai_response, summarize_conversation_title
+from .services import generate_ai_response, generate_concept_graph, summarize_conversation_title
 
 
 QUICK_TEMPLATES_PATH = Path(__file__).resolve().parent / "data" / "quick_templates.json"
@@ -91,6 +92,7 @@ def _serialize_message(message: Message, user=None) -> dict:
         "citations": message.citations or [],
         "feedback": message.feedback or "",
         "metadata": message.metadata or {},
+        "reference_type": message.reference_type or (message.metadata or {}).get("reference_type") or "",
         "feedback_reason_code": reason_code,
         "feedback_reason_text": reason_text,
     }
@@ -277,7 +279,7 @@ def conversation_messages(request, conversation_id):
 
     # 6. AI 응답 생성 및 저장
     try:
-        ai_text, citations, scores = generate_ai_response(conversation, content)
+        ai_text, citations, scores, reference_type = generate_ai_response(conversation, content)
     except Exception as exc:  # LLM 호출 실패
         return JsonResponse(
             {
@@ -289,6 +291,7 @@ def conversation_messages(request, conversation_id):
             status=201,
         )
 
+    metadata = {"reference_type": reference_type} if reference_type else {}
     assistant_message = Message.objects.create(
         conversation=conversation,
         role="assistant",
@@ -296,6 +299,8 @@ def conversation_messages(request, conversation_id):
         citations=citations,
         llm_score=scores.get("llm_score") if isinstance(scores, dict) else None,
         relevance_score=scores.get("relevance_score") if isinstance(scores, dict) else None,
+        metadata=metadata or None,
+        reference_type=reference_type or "",
     )
     conversation.update_activity(preview=ai_text)
 
@@ -363,3 +368,26 @@ def message_feedback(request, message_id):
         MessageFeedback.objects.filter(message=message, user=request.user).delete()
 
     return JsonResponse({"message": _serialize_message(message, request.user)})
+
+
+@require_POST
+def message_concept_graph(request, message_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "unauthorized"}, status=401)
+
+    message = get_object_or_404(
+        Message,
+        id=message_id,
+        conversation__created_by=request.user,
+        role="assistant",
+    )
+
+    if not message.concept_graph:
+        try:
+            graph_code = generate_concept_graph(message)
+            message.concept_graph = graph_code
+            message.save(update_fields=["concept_graph"])
+        except Exception as exc:
+            return JsonResponse({"error": str(exc)}, status=500)
+
+    return JsonResponse({"graph": message.concept_graph})

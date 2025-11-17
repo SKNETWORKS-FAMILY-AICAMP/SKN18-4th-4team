@@ -23,10 +23,13 @@ def evaluate_chunk(state):
         # rewrite 후에도 chunk를 찾지 못한 경우
         if state.get("rewrite_count", 0) >= 1:
             state["final_answer"] = "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다."
+            state["sources"] = []  # sources도 빈 배열로 설정
             state["structured_answer"] = {
+                "type": "internal",
                 "answer": "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다.",
-                "sources": [],
-                "confidence": 0.0
+                "references": [],  # sources → references로 변경
+                "llm_score": 0.0,
+                "relevance_score": 0.0
             }
             print(f"• [EvaluateChunk] complete (검색된 chunk: 0개, 의미있는 chunk: 0개, rewrite 후 chunk 없음 - END로 이동)")
         else:
@@ -78,10 +81,13 @@ def evaluate_chunk(state):
     # rewrite 후에도 관련성 있는 chunk를 찾지 못한 경우
     if not state["is_relevant"] and state.get("rewrite_count", 0) >= 1:
         state["final_answer"] = "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다."
+        state["sources"] = []  # sources도 빈 배열로 설정
         state["structured_answer"] = {
+            "type": "internal",
             "answer": "죄송합니다. 관련된 정보를 찾을 수 없어 답변을 제공할 수 없습니다.",
-            "sources": [],
-            "confidence": 0.0
+            "references": [],  # sources → references로 변경
+            "llm_score": 0.0,
+            "relevance_score": 0.0
         }
         print(f"• [EvaluateChunk] complete (검색된 chunk: {retrieved_count}개, 의미있는 chunk: 0개, rewrite 후 관련성 낮음 - END로 이동)")
         return state

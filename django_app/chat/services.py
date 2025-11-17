@@ -56,6 +56,8 @@ def _format_citations(raw_result: Dict[str, Any]) -> tuple[List[Dict[str, Any]],
     """
     LangGraph state에서 전달된 reference 정보를 프론트엔드가 기대하는 포맷으로 변환.
     """
+    import re
+
     structured = raw_result.get("structured_answer") or {}
     references = structured.get("references") or raw_result.get("sources") or []
     reference_type = structured.get("type") or raw_result.get("type") or "internal"
@@ -74,10 +76,15 @@ def _format_citations(raw_result: Dict[str, Any]) -> tuple[List[Dict[str, Any]],
                 }
             )
         else:
+            # 문자열 형식의 reference에서 [번호] 패턴 제거
+            ref_str = str(ref)
+            # [1] URL 형식에서 [1] 부분을 제거
+            title_without_number = re.sub(r'^\[\d+\]\s*', '', ref_str)
+
             formatted.append(
                 {
                     "id": idx,
-                    "title": str(ref),
+                    "title": title_without_number,
                     "journal": "",
                     "year": "",
                     "doi": "",

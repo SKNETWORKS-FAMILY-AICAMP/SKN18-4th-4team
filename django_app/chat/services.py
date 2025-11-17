@@ -135,7 +135,11 @@ def generate_ai_response(conversation: ChatConversation, prompt: str) -> tuple[s
         return content, citations, {"llm_score": None, "relevance_score": None}, "internal"
 
     app = _get_graph_app()
-    result_state = app.invoke({"question": prompt})
+    payload = {
+        "question": prompt,
+        "conversation_id": str(conversation.id),
+    }
+    result_state = app.invoke(payload)
     structured = result_state.get("structured_answer") or {}
     content = (
         result_state.get("final_answer")

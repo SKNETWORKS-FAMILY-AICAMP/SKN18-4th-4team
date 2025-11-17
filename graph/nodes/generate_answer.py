@@ -180,9 +180,18 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
     # 컨텍스트가 없는 경우 처리
     if not context:
         if is_terminology:
-            state["final_answer"] = "죄송합니다. 관련 정보를 찾을 수 없습니다."
+            error_message = "죄송합니다. 관련 정보를 찾을 수 없습니다."
         else:
-            state["final_answer"] = "죄송합니다. 관련 문서를 찾을 수 없습니다."
+            error_message = "죄송합니다. 관련 문서를 찾을 수 없습니다."
+
+        state["final_answer"] = error_message
+        # 에러 답변일 때는 참고문헌을 빈 배열로 설정
+        state["structured_answer"] = {
+            "answer": error_message,
+            "references": [],  # 빈 배열
+            "llm_score": 0.0,
+            "relevance_score": 0.0
+        }
         return state
 
     # 4. WebSearch 결과 기반 답변 (answer_websearch 로직)

@@ -8,6 +8,11 @@ class SelfRAGState(TypedDict):
     question: str  # 사용자 질문
     conversation_id: NotRequired[str]  # Django ChatConversation PK
 
+    # 대화 분류 (통합 필드)
+    conversation_type: Literal["medical", "user_info", "non_medical"]  # 대화 유형 (medical/user_info/non_medical)
+    original_question: str  # 첫 번째 입력 질문 (대화 기준점)
+    is_follow_up: bool  # 직전 대화의 후속 질문 여부
+
     # 검색 관련
     is_terminology: bool  # 의학 용어 질문 여부
     category: List[str]  # 세부 카테고리

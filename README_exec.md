@@ -28,7 +28,7 @@ docker compose -f infra/docker-compose.yml up -d
 
 ---
 
-# RAG
+# RAG & LangGraph
 - ETL
 
    1. 전처리 ~ 임베딩 모듈화 실행코드
@@ -40,20 +40,6 @@ docker compose -f infra/docker-compose.yml up -d
    1. 질의응답 실행코드
    
       python graph\ask.py
-
-
-
-
-
----
-
-# LangGraph
-
-
-
-
-
-
 
 ---
 

@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const conversationBaseUrl = conversationsUrl.endsWith("/") ? conversationsUrl : `${conversationsUrl}/`;
   const messageFeedbackBaseUrl = "/chat/api/messages/";
   const conceptGraphBaseUrl = "/chat/api/messages/";
+  const relatedQuestionsBaseUrl = "/chat/api/messages/";
 
   const state = {
     conversations: [],
@@ -31,12 +32,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedbackCancelBtn = document.getElementById("feedbackCancelBtn");
   const feedbackSubmitBtn = document.getElementById("feedbackSubmitBtn");
   const feedbackRemoveBtn = document.getElementById("feedbackRemoveBtn");
+  const relatedModal = document.getElementById("relatedQuestionsModal");
+  const relatedModalBody = document.getElementById("relatedQuestionsModalBody");
+  const relatedModalCloseBtn = document.getElementById("relatedQuestionsModalCloseBtn");
+  const relatedModalBackdrop = relatedModal ? relatedModal.querySelector(".related-modal__backdrop") : null;
   initUserProfile(user);
   hydrateInitialConversations();
   renderChatHistory();
   renderMessages();
   refreshConversations();
   attachStaticHandlers();
+  if (relatedModalCloseBtn) {
+    relatedModalCloseBtn.addEventListener("click", closeRelatedQuestionsModal);
+  }
+  if (relatedModalBackdrop) {
+    relatedModalBackdrop.addEventListener("click", closeRelatedQuestionsModal);
+  }
+  if (relatedModalBody) {
+    relatedModalBody.addEventListener("click", handleRelatedQuestionSelection);
+  }
 
   // ---------------------------------------------------------------------------
   function initUserProfile(profile) {
@@ -275,10 +289,16 @@ document.addEventListener("DOMContentLoaded", () => {
               ${
                 shouldHideGraph
                   ? ""
-                  : `<button class="message-graph-btn" type="button" data-message-id="${msg.id}">
-                      <i class="fa-solid fa-diagram-project"></i>
-                      그래프 그리기
-                    </button>`
+                  : `<div class="message-tool-buttons">
+                      <button class="message-tool-btn message-graph-btn" type="button" data-message-id="${msg.id}">
+                        <i class="fa-solid fa-diagram-project"></i>
+                        그래프 그리기
+                      </button>
+                      <button class="message-tool-btn message-related-btn" type="button" data-message-id="${msg.id}">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        연관 질문 생성
+                      </button>
+                    </div>`
               }
             </div>
           </div>
@@ -305,6 +325,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const graphBtn = wrapper.querySelector(".message-graph-btn");
         if (graphBtn) {
           graphBtn.addEventListener("click", () => handleGraphButtonClick(graphBtn, msg.id));
+        }
+        const relatedBtn = wrapper.querySelector(".message-related-btn");
+        if (relatedBtn) {
+          relatedBtn.addEventListener("click", () => handleRelatedQuestionsButtonClick(msg.id));
         }
       }
     });
@@ -376,6 +400,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function formatMessageContent(content) {
     return content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+  }
+
+  function escapeHtml(text = "") {
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return String(text).replace(/[&<>"']/g, (char) => map[char]);
   }
 
   function renderReferences(citations, referenceType = "internal") {
@@ -809,6 +844,99 @@ document.addEventListener("DOMContentLoaded", () => {
     closeFeedbackModal();
   }
 
+  function handleRelatedQuestionsButtonClick(messageId) {
+    if (!messageId || !relatedModal || !relatedModalBody) return;
+    openRelatedQuestionsModal(messageId, { isLoading: true });
+    fetchRelatedQuestions(messageId)
+      .then((questions) => {
+        renderRelatedQuestionsModal(messageId, { questions });
+      })
+      .catch((err) => {
+        console.error(err);
+        renderRelatedQuestionsModal(messageId, {
+          error: "연관 질문을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        });
+      });
+  }
+
+  function openRelatedQuestionsModal(messageId, options = {}) {
+    if (!relatedModal || !relatedModalBody) return;
+    relatedModalBody.dataset.messageId = messageId || "";
+    renderRelatedQuestionsModal(messageId, options);
+    relatedModal.classList.remove("hidden");
+  }
+
+  function renderRelatedQuestionsModal(messageId, { isLoading = false, questions = [], error = "" } = {}) {
+    if (!relatedModalBody) return;
+    if (relatedModalBody.dataset.messageId !== String(messageId)) return;
+    let questionsHtml = "";
+    if (error) {
+      questionsHtml = `<p class="related-modal__error">${error}</p>`;
+    } else if (isLoading) {
+      questionsHtml = `
+        <div class="related-modal__loading">
+          <div class="related-modal__spinner"></div>
+          <p>연관 질문을 생성하는 중입니다...</p>
+        </div>
+      `;
+    } else if (questions && questions.length) {
+      questionsHtml = `
+        <ol class="related-modal__questions">
+          ${questions
+            .map(
+              (question) => `
+            <li class="related-modal__question-item">
+              <button
+                type="button"
+                class="related-modal__question-button"
+                data-question="${encodeURIComponent(question)}"
+              >
+                <i class="fa-solid fa-circle-question"></i>
+                <span>${escapeHtml(question)}</span>
+              </button>
+            </li>
+          `
+            )
+            .join("")}
+        </ol>
+      `;
+    } else {
+      questionsHtml = `<p class="related-modal__empty">생성된 질문이 없습니다.</p>`;
+    }
+
+    relatedModalBody.innerHTML = `
+      <div class="related-modal__section">
+        <div class="related-modal__section-title">연관 질문 추천</div>
+        ${questionsHtml}
+      </div>
+    `;
+  }
+
+  function closeRelatedQuestionsModal() {
+    if (!relatedModal || !relatedModalBody) return;
+    relatedModal.classList.add("hidden");
+    relatedModalBody.dataset.messageId = "";
+    relatedModalBody.innerHTML = "";
+  }
+
+  function handleRelatedQuestionSelection(event) {
+    if (!relatedModalBody) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest(".related-modal__question-button");
+    if (!button) return;
+    const encoded = button.dataset.question || "";
+    let question = "";
+    try {
+      question = decodeURIComponent(encoded);
+    } catch {
+      question = encoded;
+    }
+    if (!question) return;
+    applyRelatedQuestionToInput(question);
+    closeRelatedQuestionsModal();
+  }
+
   async function handleGraphButtonClick(button, messageId) {
     if (!button || !messageId) return;
     button.disabled = true;
@@ -850,5 +978,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const data = await res.json();
     return data.graph || "";
+  }
+
+  async function fetchRelatedQuestions(messageId) {
+    const url = `${relatedQuestionsBaseUrl}${messageId}/related-questions/`;
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+        Accept: "application/json",
+      },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "related_questions_failed");
+    }
+    const questions = Array.isArray(data.questions) ? data.questions : [];
+    return questions.map((q) => (typeof q === "string" ? q.trim() : String(q))).filter(Boolean).slice(0, 3);
+  }
+
+  function getMessageById(messageId) {
+    const messages = getCurrentMessages();
+    return messages.find((msg) => String(msg.id) === String(messageId)) || null;
+  }
+
+  function applyRelatedQuestionToInput(question) {
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
+    if (!chatInput || !sendBtn) return;
+    chatInput.value = question;
+    sendBtn.disabled = !chatInput.value.trim();
+    sendBtn.style.background = sendBtn.disabled ? "#d1d5db" : "#3b82f6";
+    sendBtn.style.cursor = sendBtn.disabled ? "not-allowed" : "pointer";
+    chatInput.focus();
   }
 });

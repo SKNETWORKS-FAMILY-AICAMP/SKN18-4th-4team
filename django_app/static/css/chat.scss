@@ -215,9 +215,14 @@
   margin-top: 0.35rem;
 }
 
-.message-graph-btn {
-  border: 1px solid $brand-blue;
-  color: $brand-blue;
+.message-tool-buttons {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.message-tool-btn {
   background: white;
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
@@ -226,8 +231,14 @@
   align-items: center;
   gap: 0.4rem;
   cursor: pointer;
-  margin-left: auto;
   transition: background 0.2s, color 0.2s;
+  border: 1px solid $accent-slate;
+  color: $accent-slate;
+}
+
+.message-graph-btn {
+  border-color: $brand-blue;
+  color: $brand-blue;
 
   &:hover {
     background: $brand-blue;
@@ -237,6 +248,13 @@
   &.graph-btn-loading {
     opacity: 0.6;
     cursor: wait;
+  }
+}
+
+.message-related-btn {
+  &:hover {
+    background: $accent-slate;
+    color: white;
   }
 }
 
@@ -667,6 +685,131 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.related-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.related-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.related-modal__content {
+  position: relative;
+  width: 90%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
+  min-height: 200px;
+}
+
+.related-modal__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.related-modal__body {
+  min-height: 140px;
+}
+
+.related-modal__section {
+  margin-bottom: 1.25rem;
+}
+
+.related-modal__section-title {
+  font-size: 0.95rem;
+  color: $text-muted;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.related-modal__questions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.related-modal__question-item {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.related-modal__question-button {
+  width: 100%;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  color: $text-primary;
+  font-size: 0.95rem;
+  text-align: left;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $brand-blue;
+  }
+
+  i {
+    color: $brand-blue;
+    margin-top: 0.2rem;
+  }
+
+  span {
+    flex: 1;
+  }
+}
+
+.related-modal__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #475569;
+}
+
+.related-modal__spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #d0d7ff;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.related-modal__error {
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.related-modal__empty {
+  color: $text-muted;
+  font-size: 0.9rem;
 }
 
 .chat-messages-area::-webkit-scrollbar {

@@ -17,52 +17,24 @@ os.makedirs(MEMORY_DIR, exist_ok=True)
 def init_memory_db():
     """
     메모리 데이터베이스 초기화
-    테이블이 없으면 생성, 스키마 마이그레이션 처리
+    테이블이 없으면 생성
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # 기존 테이블 확인
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='conversation_memory'")
-    table_exists = cursor.fetchone() is not None
-
-    if table_exists:
-        # 기존 테이블의 컬럼 확인
-        cursor.execute("PRAGMA table_info(conversation_memory)")
-        columns = [col[1] for col in cursor.fetchall()]
-
-        # conversation_type 컬럼이 없으면 스키마 변경 필요 -> 테이블 재생성
-        if 'conversation_type' not in columns:
-            print("• [Memory] Old schema detected, migrating to new schema...")
-            cursor.execute('DROP TABLE IF EXISTS conversation_memory')
-            table_exists = False
-
-    if table_exists:
-        # question_summary, answer_summary 컬럼이 있는지 확인
-        if 'question_summary' not in columns or 'answer_summary' not in columns:
-            print("• [Memory] Adding summary columns to existing table...")
-            # 새 컬럼 추가
-            try:
-                cursor.execute('ALTER TABLE conversation_memory ADD COLUMN question_summary TEXT')
-                cursor.execute('ALTER TABLE conversation_memory ADD COLUMN answer_summary TEXT')
-                print("• [Memory] Added summary columns")
-            except sqlite3.OperationalError as e:
-                print(f"• [Memory] Columns may already exist: {e}")
-
-    if not table_exists:
-        # conversation_memory 테이블 생성 (새 스키마)
-        cursor.execute('''
-            CREATE TABLE conversation_memory (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                original_question TEXT NOT NULL,
-                assistant_answer TEXT NOT NULL,
-                question_summary TEXT,
-                answer_summary TEXT,
-                conversation_type TEXT NOT NULL
-            )
-        ''')
-        print("• [Memory] Created new conversation_memory table with summary columns")
+    # conversation_memory 테이블 생성
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS conversation_memory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id TEXT,
+            timestamp TEXT NOT NULL,
+            original_question TEXT NOT NULL,
+            assistant_answer TEXT NOT NULL,
+            question_summary TEXT,
+            answer_summary TEXT,
+            conversation_type TEXT NOT NULL
+        )
+    ''')
 
     # metadata 테이블 (턴 카운터 등)
     cursor.execute('''
@@ -153,6 +125,8 @@ def _read_memory(state: SelfRAGState, limit: int = 5) -> SelfRAGState:
     SQLite에서 최근 대화를 읽어와서 List[Dict[str,str]] 형태로 state에 저장
     가장 최근 대화가 0번째 인덱스
 
+    conversation_id가 있으면 해당 대화창의 이력만 조회 (중요!)
+
     Args:
         state: 현재 상태
         limit: 불러올 대화 개수 (기본 5개)
@@ -160,7 +134,8 @@ def _read_memory(state: SelfRAGState, limit: int = 5) -> SelfRAGState:
     Returns:
         SelfRAGState: conversation_history가 업데이트된 상태
     """
-    print("• [Memory] Reading from DB...")
+    conversation_id = state.get("conversation_id")
+    print(f"• [Memory] Reading from DB (conv_id={conversation_id})...")
 
     try:
         # DB 초기화 (테이블이 없으면 생성)
@@ -170,23 +145,47 @@ def _read_memory(state: SelfRAGState, limit: int = 5) -> SelfRAGState:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        # DB에 저장된 총 대화 개수 확인
-        cursor.execute('SELECT COUNT(*) FROM conversation_memory')
-        total_count = cursor.fetchone()[0]
+        # conversation_id가 있으면 해당 대화창의 이력만 조회!
+        if conversation_id:
+            # 특정 대화창의 총 개수 확인
+            cursor.execute('SELECT COUNT(*) FROM conversation_memory WHERE conversation_id = ?', (conversation_id,))
+            total_count = cursor.fetchone()[0]
 
-        # 실제 불러올 개수 결정 (DB에 저장된 개수와 limit 중 작은 값)
-        actual_limit = min(limit, total_count)
+            # 실제 불러올 개수 결정
+            actual_limit = min(limit, total_count)
 
-        if actual_limit > 0:
-            cursor.execute('''
-                SELECT question_summary, answer_summary, original_question, assistant_answer
-                FROM conversation_memory
-                ORDER BY timestamp DESC
-                LIMIT ?
-            ''', (actual_limit,))
-            rows = cursor.fetchall()
+            if actual_limit > 0:
+                cursor.execute('''
+                    SELECT question_summary, answer_summary, original_question, assistant_answer
+                    FROM conversation_memory
+                    WHERE conversation_id = ?
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                ''', (conversation_id, actual_limit))
+                rows = cursor.fetchall()
+            else:
+                rows = []
+
+            print(f"• [Memory] Found {total_count} conversations for conv_id={conversation_id}, loading {actual_limit}")
         else:
-            rows = []
+            # conversation_id가 없으면 전체 조회 (하위 호환성)
+            cursor.execute('SELECT COUNT(*) FROM conversation_memory')
+            total_count = cursor.fetchone()[0]
+
+            actual_limit = min(limit, total_count)
+
+            if actual_limit > 0:
+                cursor.execute('''
+                    SELECT question_summary, answer_summary, original_question, assistant_answer
+                    FROM conversation_memory
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                ''', (actual_limit,))
+                rows = cursor.fetchall()
+            else:
+                rows = []
+
+            print(f"• [Memory] No conv_id specified, loading {actual_limit} from all conversations")
 
         conn.close()
 
@@ -213,6 +212,8 @@ def _read_memory(state: SelfRAGState, limit: int = 5) -> SelfRAGState:
 
     except Exception as e:
         print(f"• [Memory] Read error: {e}")
+        import traceback
+        traceback.print_exc()
         # 오류 시 빈 리스트 설정
         state["conversation_history"] = []
 
@@ -259,14 +260,16 @@ def _write_memory(state: SelfRAGState) -> SelfRAGState:
         # 저장할 데이터 준비
         original_question = state.get("original_question") or state.get("question", "")
         conversation_type = state.get("conversation_type", "medical")
+        conversation_id = state.get("conversation_id")  # 대화 ID 추출
 
         # 요약 생성 (토큰 절약)
-        print(f"• [Memory] Generating summary (type={conversation_type})...")
+        print(f"• [Memory] Generating summary (type={conversation_type}, conv_id={conversation_id})...")
         summaries = _summarize_conversation(original_question, assistant_answer, conversation_type)
         question_summary = summaries["question_summary"]
         answer_summary = summaries["answer_summary"]
 
         print(f"• [Memory] Saving to DB:")
+        print(f"  - conversation_id: {conversation_id}")
         print(f"  - original_question: {original_question[:50]}...")
         print(f"  - question_summary: {question_summary[:50] if question_summary else 'NULL'}...")
         print(f"  - answer_summary: {answer_summary[:50] if answer_summary else 'NULL'}...")
@@ -279,9 +282,9 @@ def _write_memory(state: SelfRAGState) -> SelfRAGState:
 
         cursor.execute('''
             INSERT INTO conversation_memory
-            (timestamp, original_question, assistant_answer, question_summary, answer_summary, conversation_type)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (timestamp, original_question, assistant_answer, question_summary, answer_summary, conversation_type))
+            (conversation_id, timestamp, original_question, assistant_answer, question_summary, answer_summary, conversation_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (conversation_id, timestamp, original_question, assistant_answer, question_summary, answer_summary, conversation_type))
 
         conn.commit()
 

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, TypedDict, Tuple, Literal
+from typing import List, Dict, Any, TypedDict, Tuple, Literal, NotRequired
 
 
 class SelfRAGState(TypedDict):
@@ -6,6 +6,7 @@ class SelfRAGState(TypedDict):
 
     # 입력 정보
     question: str  # 사용자 질문
+    conversation_id: NotRequired[str]  # Django ChatConversation PK
 
     # 대화 분류 (통합 필드)
     conversation_type: Literal["medical", "user_info", "non_medical"]  # 대화 유형 (medical/user_info/non_medical)

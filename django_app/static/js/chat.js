@@ -488,8 +488,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * sendMessage 함수는 채팅 입력란의 사용자 메시지를 서버에 전송하고 UI를 최신 상태로 업데이트하는 비동기 함수
+   * - 입력값 검증(공백, 중복전송 방지)
+   * - 대화방이 없으면 새 대화 생성
+   * - 임시 사용자 메시지 렌더링 및 로딩 메시지 표시
+   * - 서버로 메시지 POST 요청 전송
+   * - 정상 응답 시 임시 메시지를 실제 메시지로 대체, assistant 메시지 스트리밍 처리
+   * - 오류 발생 시 임시 메시지 제거 및 메시지 전송 실패 알림
+   * - 항상 로딩 상태, 전송상태 초기화
+   * @param {string} content - 사용자가 입력한 메시지
+   */
   async function sendMessage(content) {
+    // 입력이 없거나 이미 전송 중이면 리턴
     if (!content.trim() || state.isSending) return;
+
+    // 현재 대화방이 없으면 생성
     if (!state.currentConversationId) {
       await createConversation();
       if (!state.currentConversationId) {
@@ -499,9 +513,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     state.isSending = true;
+    // 메시지 캐시가 없으면 생성
     if (!state.messagesCache[state.currentConversationId]) {
       state.messagesCache[state.currentConversationId] = [];
     }
+    // 임시 사용자 메시지 객체 생성 및 캐시에 추가(UX 즉각반응용)
     const tempUserMessage = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -515,6 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showLoadingMessage();
 
     try {
+      // 서버에 메시지 전송 요청
       const res = await fetch(`${conversationBaseUrl}${state.currentConversationId}/messages/`, {
         method: "POST",
         credentials: "same-origin",
@@ -526,23 +543,31 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ content }),
       });
       if (!res.ok) throw new Error("send_failed");
+
       const data = await res.json();
-      // replace temp user message with actual one if provided
+
+      // 임시 메시지를 대체/제거
       const conversationMsgs = state.messagesCache[state.currentConversationId] || [];
       const tempIndex = conversationMsgs.findIndex((msg) => msg.id === tempUserMessage.id);
       if (tempIndex !== -1) {
         conversationMsgs.splice(tempIndex, 1);
       }
+
+      // 서버에서 받은 실제 메시지 추가
       const newMessages = data.messages || [];
       conversationMsgs.push(...newMessages);
       state.messagesCache[state.currentConversationId] = conversationMsgs;
       renderMessages();
+      // 어시스턴트 메시지는 스트리밍 적용
       newMessages.filter((msg) => msg.role === "assistant").forEach(streamAssistantMessage);
+      // 오류 메시지 있으면 콘솔 경고
       if (data.error) {
         console.warn("LLM 오류:", data.error);
       }
+      // 대화 목록 새로고침
       await refreshConversations({ preserveCurrent: true });
     } catch (err) {
+      // 전송 실패 시 임시 메시지 제거 후 UI 갱신
       console.error(err);
       alert("메시지 전송에 실패했습니다.");
       const conversationMsgs = state.messagesCache[state.currentConversationId] || [];
@@ -553,6 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderMessages();
       }
     } finally {
+      // 전송 상태 및 로딩 메시지 초기화
       state.isSending = false;
       removeLoadingMessage();
     }

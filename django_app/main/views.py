@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Q
 from django.shortcuts import render
 from django.urls import NoReverseMatch, reverse
@@ -12,6 +13,7 @@ def _safe_reverse(name: str, default: str) -> str:
         return default
 
 
+@login_required(login_url="accounts:login")
 def index(request):
     user = request.user
     message_qs = Message.objects.filter(conversation__is_archived=False, role="assistant")
@@ -39,12 +41,22 @@ def index(request):
         "external_usage_rate": external_ratio,
     }
 
+    user_avatar_url = ""
+    if getattr(user, "profile_image", None):
+        try:
+            if user.profile_image:
+                user_avatar_url = user.profile_image.url
+        except ValueError:
+            user_avatar_url = ""
+
     context = {
         "user_name": (user.get_full_name() or user.get_username() or "게스트 연구자") if user.is_authenticated else "게스트 연구자",
         "user_email": user.email if getattr(user, "email", None) else "research@example.com",
         "chat_url": _safe_reverse("chat:index", "/chat/"),
         "logout_url": _safe_reverse("accounts:logout", "/accounts/logout/"),
         "show_logout": user.is_authenticated,
+        "user_avatar_url": user_avatar_url,
+        "profile_upload_url": _safe_reverse("accounts:profile-image-upload", ""),
         "dashboard_stats": dashboard_stats,
     }
     return render(request, "main/main_dashboard.html", context)

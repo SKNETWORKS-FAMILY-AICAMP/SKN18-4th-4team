@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import NoReverseMatch, reverse
@@ -97,6 +98,7 @@ def _serialize_message(message: Message, user=None) -> dict:
         "feedback_reason_text": reason_text,
     }
 
+@login_required(login_url="accounts:login")
 def index(request):
     """
     채팅 메인 페이지 렌더링 뷰.

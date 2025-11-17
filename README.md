@@ -179,6 +179,9 @@ flowchart TD
 
 # Web
 
+### 인증
+- SSR 기반 MVT 구조 - django.contrib.auth 이용
+
 ```mermaid
 sequenceDiagram
     participant U as User (브라우저)

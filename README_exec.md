@@ -58,14 +58,21 @@ docker compose -f infra/docker-compose.yml up -d
 ---
 
 # Web
-1. postgreSQL 실행 확인
-2. 실행
+1. .env.example 복사 후 .env 생성
+2. postgreSQL 실행 확인
+3. DB 초기화
+```bash
+python scripts/init_models.py
+```
+4. 실행
 ```bash
 python django_app/manage.py makemigrations
-# Was message.xxx renamed to message.xxx (a TextField)? [y/N] y
 python django_app/manage.py migrate
 python django_app/manage.py runserver
 ```
-3. 화면 접속 (메인 - 대시보드)
+5. 화면 접속 (메인 - 대시보드)
    - http://localhost:8000/main
- - 
+
+6. 네이버 SMTP
+  - 앱 비밀번호 설정
+  - .env.example SMTP 설정 .env에 추가

@@ -24,7 +24,7 @@
             <img
               id="userAvatarImage"
               class="user-avatar__image"
-              src="{{ user_avatar_url }}"
+              {% if user_avatar_url %}src="{{ user_avatar_url }}"{% endif %}
               alt="사용자 프로필 이미지"
               {% if not user_avatar_url %}hidden{% endif %}
             >
@@ -77,9 +77,8 @@
           <img
             id="profilePreviewImage"
             alt="선택된 프로필 이미지 미리보기"
-            {% if not user_avatar_url %}hidden{% else %}
-            src="{{ user_avatar_url }}"
-            {% endif %}
+            {% if user_avatar_url %}src="{{ user_avatar_url }}"{% endif %}
+            {% if not user_avatar_url %}hidden{% endif %}
           >
         </div>
         <label class="profile-modal__input">

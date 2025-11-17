@@ -47,8 +47,8 @@ def filter_and_renumber_sources(answer: str, sources: list) -> tuple:
             # 기존 번호 제거 (예: "[1] URL" -> "URL")
             source_text = re.sub(r'^\[\d+\]\s*', '', source_text)
 
-            # "[번호] 출처" 형식으로 저장
-            filtered_sources.append(f"[{new_num}] {source_text}")
+            # 번호 없이 순서만 유지 (answer의 [1]과 첫 번째 항목이 매칭)
+            filtered_sources.append(source_text)
 
     # 답변의 출처 번호를 재번호화
     renumbered_answer = answer
@@ -248,6 +248,18 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 
         answer = res.choices[0].message.content.strip()
 
+        # 답변 실패 감지 (답변 못할 때는 참고문헌 제공 안함)
+        if "답변" in answer and ("제공할 수 없" in answer or "찾을 수 없" in answer):
+            state["structured_answer"] = {
+                "type": "external",
+                "answer": answer,
+                "references": [],  # 빈 배열
+                "llm_score": 0.0,
+                "relevance_score": 0.0
+            }
+            state["llm_score"] = 0.0
+            return state
+
         # 답변 정제 및 출처 필터링
         answer_with_citations, filtered_sources = filter_and_renumber_sources(answer, sources)
 
@@ -316,6 +328,18 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
         )
 
         answer = res.choices[0].message.content.strip()
+
+        # 답변 실패 감지 (답변 못할 때는 참고문헌 제공 안함)
+        if "답변" in answer and ("제공할 수 없" in answer or "찾을 수 없" in answer):
+            state["structured_answer"] = {
+                "type": "internal",
+                "answer": answer,
+                "references": [],  # 빈 배열
+                "llm_score": 0.0,
+                "relevance_score": 0.0
+            }
+            state["llm_score"] = 0.0
+            return state
 
         # 답변 정제 및 출처 필터링
         answer_with_citations, filtered_sources = filter_and_renumber_sources(answer, sources)

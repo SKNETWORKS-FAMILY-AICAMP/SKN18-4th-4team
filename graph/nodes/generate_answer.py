@@ -298,6 +298,7 @@ def generate_answer(state: SelfRAGState) -> SelfRAGState:
 - 의학 정보는 신중하고 정확하게 전달하세요
 - 추측하지 말고 문서 내용에 충실하세요
 - 핵심 단어에 ** markdown 강조 표현을 적용하세요
+- 최종 답변을 생성하지 못하는 경우, 참고문헌을 제공하지 마세요!
         """
 
         res = client.chat.completions.create(

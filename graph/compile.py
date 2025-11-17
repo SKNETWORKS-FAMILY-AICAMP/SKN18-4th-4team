@@ -9,19 +9,30 @@ from graph.nodes.retrieval import retrieval
 from graph.nodes.evaluate_chunk import evaluate_chunk
 from graph.nodes.rewrite_query import rewrite_query
 from graph.nodes.generate_answer import generate_answer
+from graph.nodes.memory import memory_read, memory_write
 
 def create_medical_rag_workflow():
     """
-    의료 RAG 워크플로우 생성
-    retrieval 노드는 내부적으로 VectorRetriever를 사용하여 DB에 접근
+    의료 RAG 워크플로우 생성 (개선 버전)
+    conversation_type 기반 라우팅
     """
     workflow = StateGraph(SelfRAGState)
 
-    def classify_quit(state: SelfRAGState) -> str:
-        """의학 관련 질문인지 판별 후 분기"""
-        if state.get("need_quit", False):
+    def route_by_conversation_type(state: SelfRAGState) -> str:
+        """
+        conversation_type에 따라 분기
+        - "user_info": generate_answer로 (원본 질문과 conversation_history 전달)
+        - "non_medical": END로 (안내 메시지 출력 후 바로 종료)
+        - "medical": medical_check로 (기존 RAG 파이프라인)
+        """
+        conv_type = state.get("conversation_type", "medical")
+
+        if conv_type == "user_info":
+            return "generate_answer"
+        elif conv_type == "non_medical":
             return END
-        return "medical_check"
+        else:  # medical
+            return "medical_check"
 
     def evaluate_relevance(state: SelfRAGState) -> str:
         """검색된 문서의 관련성 평가 후 분기"""
@@ -34,6 +45,7 @@ def create_medical_rag_workflow():
         return "rewrite_query"
 
     # --- 노드 등록 ---
+    workflow.add_node("memory_read", memory_read)
     workflow.add_node("classifier", classifier)
     workflow.add_node("medical_check", medical_check)
     workflow.add_node("web_search", web_search)
@@ -41,20 +53,28 @@ def create_medical_rag_workflow():
     workflow.add_node("evaluate_chunk", evaluate_chunk)
     workflow.add_node("rewrite_query", rewrite_query)
     workflow.add_node("generate_answer", generate_answer)
+    workflow.add_node("memory_write", memory_write)
 
     # --- 시작점 설정 ---
-    workflow.set_entry_point("classifier")
+    workflow.set_entry_point("memory_read")
 
     # --- 엣지 정의 ---
 
+    # 0. Memory Read → Classifier (일반 엣지)
+    workflow.add_edge("memory_read", "classifier")
+
     # 1. Classifier 다음 경로 (조건부 엣지)
-    # - need_quit이 True면 END, False면 medical_check로
+    # - conversation_type에 따라 분기
+    #   - "user_info": generate_answer로 (원본 질문과 conversation_history 전달)
+    #   - "non_medical": END로 (안내 메시지 출력 후 바로 종료)
+    #   - "medical": medical_check로 (기존 RAG 파이프라인)
     workflow.add_conditional_edges(
         "classifier",
-        classify_quit,
+        route_by_conversation_type,
         {
-            END: END,
-            "medical_check": "medical_check"
+            "generate_answer": "generate_answer",
+            "medical_check": "medical_check",
+            END: END
         }
     )
 
@@ -92,8 +112,11 @@ def create_medical_rag_workflow():
     # 6. Rewrite Query → Retrieval (순환) (일반 엣지)
     workflow.add_edge("rewrite_query", "retrieval")
 
-    # 7. Generate Answer → END (일반 엣지)
-    workflow.add_edge("generate_answer", END)
+    # 7. Generate Answer → Memory Write → END (일반 엣지)
+    workflow.add_edge("generate_answer", "memory_write")
+
+    # 8. Memory Write → END (일반 엣지)
+    workflow.add_edge("memory_write", END)
 
     # --- 그래프 컴파일 ---
     app = workflow.compile()

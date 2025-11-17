@@ -342,4 +342,8 @@ staticfiles/
 .history
 rag/data/**
 
+# Cursor/Claude AI local settings
+.claude/
+*.local.json
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django,windows,macos,jupyternotebooks

@@ -122,6 +122,12 @@ class Message(models.Model):
     tokens_completion = models.IntegerField(null=True, blank=True)
     llm_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     relevance_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    reference_type = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="참고자료 종류 (internal/external 등)",
+    )
+    concept_graph = models.TextField(blank=True)
 
     # RAG/툴/참고문헌
     citations = models.JSONField(null=True, blank=True)  # [{"title":..., "doi":..., "pubmed":...}]

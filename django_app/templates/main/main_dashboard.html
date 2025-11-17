@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static sass_tags %}
+{% load static sass_tags humanize %}
 
 {% block title %}MedAI Research - 메인{% endblock %}
 
@@ -22,7 +22,8 @@
           <div class="flex-between">
             <div class="flex-gap-sm">
               <div class="badge-square brand-badge">
-                <i class="fa-solid fa-robot brand-badge__icon"></i>
+                <!-- <i class="fa-solid fa-robot brand-badge__icon"></i> -->
+                <img src="/static/img/medai-logo.png" alt="MedAI 로고" class="brand-badge__image">
               </div>
               <div>
                 <h1 class="brand-title">MedAI Research</h1>
@@ -74,10 +75,9 @@
                   </div>
                   <p class="stat-title">총 논문 수</p>
                 </div>
-                <span class="stat-chip stat-chip--positive">+124</span>
               </div>
               <div>
-                <p class="stat-value">2,847</p>
+                <p class="stat-value">{{ dashboard_stats.total_papers|intcomma }}</p>
               </div>
             </div>
 
@@ -87,12 +87,11 @@
                   <div class="stat-icon bg-soft-green">
                     <i class="fa-solid fa-comments text-accent-green"></i>
                   </div>
-                  <p class="stat-title">활성 대화</p>
+                  <p class="stat-title">총 연구 질문 수</p>
                 </div>
-                <span class="stat-chip stat-chip--positive">+23</span>
               </div>
               <div>
-                <p class="stat-value">156</p>
+                <p class="stat-value">{{ dashboard_stats.total_research_questions|default:0|intcomma }}</p>
               </div>
             </div>
 
@@ -102,12 +101,11 @@
                   <div class="stat-icon bg-soft-lime">
                     <i class="fa-solid fa-chart-line text-lime"></i>
                   </div>
-                  <p class="stat-title">하루 질문 수</p>
+                  <p class="stat-title">AI 답변 정확도</p>
                 </div>
-                <span class="stat-chip stat-chip--negative">-8%</span>
               </div>
               <div>
-                <p class="stat-value">184</p>
+                <p class="stat-value">{{ dashboard_stats.ai_answer_accuracy|default:0|floatformat:-2 }}%</p>
               </div>
             </div>
 
@@ -115,14 +113,13 @@
               <div class="stat-card-header">
                 <div class="flex-gap-sm">
                   <div class="stat-icon bg-soft-amber">
-                    <i class="fa-solid fa-user-group text-amber"></i>
+                    <i class="fa-solid fa-magnifying-glass-chart text-amber"></i>
                   </div>
-                  <p class="stat-title">활성 사용자</p>
+                  <p class="stat-title">RAG 검색 적합도</p>
                 </div>
-                <span class="stat-chip stat-chip--positive">+12</span>
               </div>
               <div>
-                <p class="stat-value">89</p>
+                <p class="stat-value">{{ dashboard_stats.rag_matching_rate|default:0|floatformat:-2 }}</p>
               </div>
             </div>
 
@@ -130,14 +127,13 @@
               <div class="stat-card-header">
                 <div class="flex-gap-sm">
                   <div class="stat-icon bg-soft-indigo">
-                    <i class="fa-solid fa-bullseye text-indigo"></i>
+                    <i class="fa-solid fa-building-columns text-indigo"></i>
                   </div>
-                  <p class="stat-title">AI 응답 정확도</p>
+                  <p class="stat-title">문헌 검색 활용도</p>
                 </div>
-                <span class="stat-chip stat-chip--positive">+2.1%</span>
               </div>
               <div>
-                <p class="stat-value">94.8%</p>
+                <p class="stat-value">{{ dashboard_stats.internal_usage_rate|default:0|floatformat:-2 }}%</p>
               </div>
             </div>
 
@@ -145,14 +141,13 @@
               <div class="stat-card-header">
                 <div class="flex-gap-sm">
                   <div class="stat-icon bg-soft-pink">
-                    <i class="fa-solid fa-stopwatch text-pink"></i>
+                    <i class="fa-solid fa-earth-asia text-pink"></i>
                   </div>
-                  <p class="stat-title">평균 응답 시간</p>
+                  <p class="stat-title">외부 지식 활용도</p>
                 </div>
-                <span class="stat-chip stat-chip--info">-0.3초</span>
               </div>
               <div>
-                <p class="stat-value">1.2초</p>
+                <p class="stat-value">{{ dashboard_stats.external_usage_rate|default:0|floatformat:-2 }}%</p>
               </div>
             </div>
           </div>
@@ -162,32 +157,38 @@
           <h3 class="section-title">주요 기능</h3>
           <div class="grid grid-cols-1 md:grid-cols-3">
             <div class="card card--padded">
-              <div class="feature-icon bg-soft-blue">
-                <i class="fa-solid fa-certificate text-brand-blue-dark"></i>
+              <div class="feature-header">
+                <div class="feature-icon bg-soft-blue">
+                  <i class="fa-solid fa-certificate text-brand-blue-dark"></i>
+                </div>
+                <h4 class="feature-title">국내 Big 5 병원 참여</h4>
               </div>
-              <h4 class="feature-title">검증된 논문 기반</h4>
-              <p class="stat-title">
-                PubMed, DOI 링크가 포함된 신뢰할 수 있는 의학 정보를 제공합니다.
+              <p class="feature-content">
+                서울성모병원, 삼성서울병원, 서울대병원, 세브란스병원, 서울시 보라매병원이 구축에 참여했습니다.
               </p>
             </div>
 
             <div class="card card--padded">
-              <div class="feature-icon bg-soft-green">
-                <i class="fa-solid fa-book-open-reader text-accent-green"></i>
+              <div class="feature-header">
+                <div class="feature-icon bg-soft-green">
+                  <i class="fa-solid fa-book-open-reader text-accent-green"></i>
+                </div>
+                <h4 class="feature-title">필수의료 지식 개방</h4>
               </div>
-              <h4 class="feature-title">참고문헌 자동 생성</h4>
-              <p class="stat-title">
-                모든 응답에 관련 논문의 참고문헌이 자동으로 포함됩니다.
+              <p class="feature-content">
+                임상 근거가 명확한 필수의료 지식 Q&amp;A 1.5만 쌍, 전문 의료 안내문, 동의서 등 고품질 의학 자료를 제공해 누구나 활용할 수 있습니다.
               </p>
             </div>
 
             <div class="card card--padded">
-              <div class="feature-icon bg-soft-violet">
-                <i class="fa-solid fa-bolt text-violet"></i>
+              <div class="feature-header">
+                <div class="feature-icon bg-soft-violet">
+                  <i class="fa-solid fa-bolt text-violet"></i>
+                </div>
+                <h4 class="feature-title">다양한 의료 데이터 출처</h4>
               </div>
-              <h4 class="feature-title">빠른 질의응답</h4>
-              <p class="stat-title">
-                의학 용어 툴팁과 질문 템플릿으로 더 빠르게 정보를 찾을 수 있습니다.
+              <p class="feature-content">
+                학술 논문, 국제/국내 가이드라인, 의료 교과서, 동의서 등 타당성이 검증된 데이터를 통합했습니다.
               </p>
             </div>
           </div>

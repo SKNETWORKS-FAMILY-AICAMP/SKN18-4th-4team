@@ -171,6 +171,9 @@ h4 {
   width: 2rem;
   height: 2rem;
   border-radius: 9999px;
+  border: none;
+  padding: 0;
+  overflow: hidden;
   @include flex-center;
 }
 
@@ -217,6 +220,180 @@ h4 {
   width: 1.5rem;
   height: 1.5rem;
   font-size: 1.5rem;
+}
+
+.user-avatar {
+  cursor: pointer;
+  border: 1px solid #eee;
+  position: relative;
+}
+
+.user-avatar--has-image {
+  background: transparent;
+
+  .user-avatar__icon {
+    display: none;
+  }
+}
+
+.main-header .user-avatar--has-image {
+  background: #fff;
+}
+
+.user-avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9999px;
+  display: block;
+}
+
+.user-avatar__icon {
+  color: white;
+  position: absolute;
+}
+
+.profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 1050;
+}
+
+.profile-modal-backdrop.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.profile-modal {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transform: translateY(10px);
+  transition: transform 0.2s ease;
+}
+
+.profile-modal-backdrop.is-visible .profile-modal {
+  transform: translateY(0);
+}
+
+.profile-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.profile-modal__subtitle {
+  font-size: 0.875rem;
+  color: $text-muted;
+  margin: 0.25rem 0 0;
+}
+
+.profile-modal__close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: $text-muted;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+  }
+}
+
+.profile-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.profile-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-modal__preview {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.75rem;
+  border: 1px dashed $border-default;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-modal__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-modal__preview-placeholder {
+  font-size: 2rem;
+  color: $text-muted;
+}
+
+.profile-modal__preview--has-image {
+  .profile-modal__preview-placeholder {
+    display: none;
+  }
+}
+
+.profile-modal__input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: $text-primary;
+
+  input {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid $border-default;
+    background: #fff;
+    font-size: 0.875rem;
+  }
+}
+
+.profile-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.profile-modal__message {
+  min-height: 1.25rem;
+  font-size: 0.875rem;
+  color: $text-muted;
+}
+
+.profile-modal__message.is-error {
+  color: $accent-red;
+}
+
+.profile-modal__message.is-success {
+  color: $accent-green;
 }
 
 .icon-xs {

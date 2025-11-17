@@ -1,41 +1,6 @@
-'''
-=================================================================================
-구현된 기능 (Phase 1) - 개선 버전 (원본 전달)
-=================================================================================
-
-1. Write Memory (기록)
-   - 대화를 1-2줄로 요약하여 DB에 저장 (향후 활용 대비)
-   - GPT-4o-mini로 요약 생성
-   - conversation_history는 List[Dict[str,str]] 형식 (role/content 페어)
-   - 최신 5개만 유지 (가장 최근 대화가 0번째)
-
-2. Read Memory (조회)
-   - 최근 5개 대화의 **원본**을 불러와서 List[Dict] 형태로 반환
-   - 형식: [{"role": "user", "content": "원본 질문"}, {"role": "assistant", "content": "원본 답변"}, ...]
-   - 원본 사용 이유: 후속 질문에 필요한 세부 정보 보존 (맥락 인식 개선)
-
-=============================================================================
-데이터베이스 스키마
-=================================================================================
-
-테이블 1: conversation_memory
-- id: INTEGER PRIMARY KEY AUTOINCREMENT
-- timestamp: TEXT (ISO 8601 형식)
-- original_question: TEXT (사용자의 원래 질문)
-- assistant_answer: TEXT (원본 답변)
-- question_summary: TEXT (질문 요약, 1-2줄)
-- answer_summary: TEXT (답변 요약, 1-2줄)
-- conversation_type: TEXT (대화 유형: medical/user_info/non_medical)
-
-테이블 2: metadata
-- key: TEXT PRIMARY KEY
-- value: TEXT
-'''
-
-
 import sqlite3
 from datetime import datetime
-from graph.state_i import SelfRAGState
+from graph.state import SelfRAGState
 from openai import OpenAI
 import os
 

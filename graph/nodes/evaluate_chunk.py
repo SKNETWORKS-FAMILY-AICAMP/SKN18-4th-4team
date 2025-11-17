@@ -52,6 +52,7 @@ def evaluate_chunk(state):
 
     res = client.chat.completions.create(
         model="gpt-4o-mini",
+        temperature=0.0,
         messages=[{"role": "user", "content": prompt}]
     )
 

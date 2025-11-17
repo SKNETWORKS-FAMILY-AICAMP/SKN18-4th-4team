@@ -9,7 +9,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import ChatConversation, Message, MessageFeedback
-from .services import generate_ai_response, generate_concept_graph, summarize_conversation_title
+from .services import (
+    generate_ai_response,
+    generate_concept_graph,
+    generate_related_questions,
+    summarize_conversation_title,
+)
 
 
 QUICK_TEMPLATES_PATH = Path(__file__).resolve().parent / "data" / "quick_templates.json"
@@ -393,3 +398,23 @@ def message_concept_graph(request, message_id):
             return JsonResponse({"error": str(exc)}, status=500)
 
     return JsonResponse({"graph": message.concept_graph})
+
+
+@require_POST
+def message_related_questions(request, message_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "unauthorized"}, status=401)
+
+    message = get_object_or_404(
+        Message,
+        id=message_id,
+        conversation__created_by=request.user,
+        role="assistant",
+    )
+
+    try:
+        questions = generate_related_questions(message)
+    except Exception as exc:
+        return JsonResponse({"error": str(exc)}, status=500)
+
+    return JsonResponse({"questions": questions})

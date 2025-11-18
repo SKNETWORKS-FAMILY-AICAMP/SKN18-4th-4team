@@ -331,7 +331,7 @@ sequenceDiagram
   `langgraph` 워크플로우로 의료 특화 Self-RAG 파이프라인을 구성해 질문 유형에 따라 사용자 정보·비의학·의학 질문을 자동 라우팅하고, 용어 질문은 WebSearch, 일반 의학 질문은 RAG 검색으로 보내도록 설계
 - **워크플로우 :** 메모리 → 질문 분류 → 용어 판별 → 검색/웹서치 → 검증 → 답변 → 메모리 기록  
 - **노드 별 기능**  
-  - **memory_read** : sqlLightDB에 저장된 기존 대화내역 전달(user_info는 5개, medical은 1개)  
+  - **memory_read** : sqlite3에 저장된 기존 대화내역 전달(user_info는 5개, medical은 1개)  
   - **classifier** : 사용자의 질문을 medical, user_info, none_medical로 분류  
   - **medical_check** : vectorDB / Websearch 대상(의학 용어)인지 판별  
   - **retriver** : vectorDB에서 유사도 검색을 통해 유사도 높은 청크 5개 추출  
@@ -340,7 +340,7 @@ sequenceDiagram
     **rewrite_query** : evaluate_chunk에서 낮은 점수가 나오면 llm이 질문을 재작성하여 retriver로 전달(최대 1번)  
   - **WebSearch** : Tavily를 사용해 의학 용어 정의 검색  
   - **Generate_answer** : 답변 형식 고정, llm 판단 점수출력, 출처 추출  
-  - **memory_write** : 질문과 Generate_answer에서 생성된 답변 원본과 summary, 채팅창 아이디(conversation_id)를 sqlLightDB에 저장
+  - **memory_write** : 질문과 Generate_answer에서 생성된 답변 원본과 summary, 채팅창 아이디(conversation_id)를 sqlite3에 저장
 
 - **메모리 시스템**
   - LLM 에이전트는 기본적으로 금붕어 뇌와 같아서, 그래프가 한 턴 실행될 때마다 바로 전 문장도 잊어버리는 특성

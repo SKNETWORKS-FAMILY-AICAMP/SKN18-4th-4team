@@ -1,204 +1,145 @@
-# SKN18-4th-4team
+# SKN18-4th-Team
 
+## [팀]
 
+| 이름    | 역할   | 세부 역할 |   
+|:------: |:-----: |:-------------------: |  
+| 정동석  | 팀장   | RAG, LangGraph  |   
+| 최준호  | 팀원   | 데이터 전처리 |   
+| 이상효  | 팀원   | 데이터 전처리, RAG, Memory |   
+| 안시현  | 팀원   | LangGraph |    
+| 정인하  | 팀원   | LangGraph, Memory |   
+| 황혜진  | 팀원   | WEB | 
 
----
+## [주제]
 
-## Python
-- version : 3.12.x
+### **🧬 MedAI Research**
+> 의료 연구 AI 어시스턴트  
+> LLM을 연동한 내·외부 문서 기반 질의응답 웹페이지
 
-## 폴더 구조
+### 📌 서비스 개요
+MedAI Research는 의료 연구·임상 진료·학술 활동에서 반복되는 **논문 검색·가이드라인 확인·임상 지침 비교**에 드는 시간을 줄이기 위해 설계된 **AI 기반 Evidence Assistant** 입니다.  
+ 의학 지식은 오류가 허용되지 않기 때문에, 단순 요약이나 일반적인 생성형 답변이 아닌  
+ **“근거 기반(Evidence-Based)”**, **“출처가 명확한”**, **“재현 가능한”** 답변을 제공하는 것이 핵심입니다.
 
-- 역할 그룹 : django_app / graph / rag
+### **✔ 핵심 목표**
+* **최신 논문·가이드라인 기반**의 신뢰 가능한 답변 제공  
+* 반복적이고 시간이 많이 드는 문헌 검색·근거 비교 프로세스를 자동화  
+* 의료 연구자·의사·대학원생들이 **임상적 판단 근거**를 빠르게 확보할 수 있도록 지원  
+* RAG + LangGraph 기반으로 **추론 품질, 신뢰성, 근거 재현성**을 확보  
+* 필수 의료 지식 **1.5만 Q&A + 전문 의료 문서 + 교과서** 기반 지식 그래프 활용
 
-```text
-SKN18-4th-4Team/
-├─ requirements.txt                         # 의존성 통합
-├─ README.md                                # PT
-├─ README_exec.md                           # 실행 관련
-├─ .env.example
-├─ Makefile
-│
-├─ scripts/
-│  ├─ init_db.sql                           # CREATE EXTENSION vector; 테이블/인덱스 초기 스키마
-│  ├─ seed_docs.py                          # (선택) 샘플 문서/청크/임베딩 시드
-│  └─ embed_reindex.py                      # (선택) 임베딩 재생성/인덱스 리빌드 배치
-│
-├─ infra/
-│  ├─ docker-compose.yml                    # postgres(pgvector)+django 컨테이너 오케스트레이션
-│  ├─ nginx.conf                            # (선택) 운영 배포용 리버스 프록시
-│  └─ docker/
-│     ├─ django_app.Dockerfile              # Django 컨테이너 이미지
-│     └─ postgres.Dockerfile                # (선택) 커스텀 pgvector 이미지
-│
-├─ django_app/                              # Django 웹앱(화면+API)
-│  ├─ manage.py
-│  ├─ core/
-│  │  ├─ settings/
-│  │  │  ├─ base.py                         # 공통 설정: INSTALLED_APPS/DB/STATIC/TEMPLATES/로그 등
-│  │  │  ├─ dev.py                          # 개발용 오버라이드
-│  │  │  └─ prod.py                         # 운영용 오버라이드
-│  │  ├─ env.py                             # django-environ 로더(.env)
-│  │  └─ logging.py                         # 로깅 포맷/핸들러/레벨
-│  ├─ urls.py                               # 전역 URL include(accounts/docs/qa/adminui)
-│  ├─ asgi.py
-│  ├─ wsgi.py
-│  ├─ templates/
-│  │  ├─ base.html                          # Bootstrap 공통 레이아웃
-│  │  └─ _partials/                         # 공통 조각(네비/알림 등)
-│  │     ├─ _navbar.html
-│  │     └─ _alerts.html
-│  ├─ static/                               # 전역 정적(css/js/img)
-│  │  ├─ css/
-│  │  ├─ js/
-│  │  └─ img/
-│  ├─ accounts/                             # 로그인/권한/프로필
-│  │  ├─ models.py
-│  │  ├─ views.py
-│  │  ├─ forms.py                           # (선택) 폼 기반 로그인/프로필 수정
-│  │  ├─ urls.py
-│  │  └─ templates/accounts/login.html
-│  ├─ docs/                                 # 문서 목록/상세(업로드 미사용 → 화면만)
-│  │  ├─ models.py                          # Doc/Chunk 메타(권한/소스 구분)
-│  │  ├─ views.py
-│  │  ├─ urls.py
-│  │  └─ templates/docs/{list,detail}.html
-│  ├─ qa/                                   # 검색/QA 화면 + JSON API
-│  │  ├─ views.py                           # /search 템플릿, /api/qa 핸들러
-│  │  ├─ serializers.py                     # API 응답 스키마(검증/직렬화)
-│  │  ├─ urls.py
-│  │  └─ templates/qa/{search,history}.html
-│  ├─ adminui/                              # 운영/모니터링(인덱스/로그/비용)
-│  │  ├─ views.py
-│  │  ├─ urls.py
-│  │  └─ templates/adminui/status.html
-│  └─ adapters/                             # 외부 레이어 연동(의존성 역전 지점)
-│     ├─ graph_runner.py                    # LangGraph compile/app 실행 래퍼
-│     └─ rag_repo.py                        # rag.services 호출(검색/임베딩) thin wrapper
-│
-├─ graph/                                   # LangGraph 파이프라인(비즈니스 절차서)
-│  ├─ state.py                              # State 타입/리듀서(메시지 누적 등)
-│  ├─ nodes/
-│  │  ├─ router.py                          
-│  │  └─ ...
-│  ├─ llm_client.py                         # LLM 클라이언트(공통 인터페이스 적용)
-│  ├─ memory/
-│  │  └─ checkpointer_pg.py                 # (선택) 세션/대화 기록 저장(Postgres/Redis)
-│  ├─ compile.py                            # graph.compile() 정의(엔트리 포인트)
-│  └─ data/                                 # (선택) 그래프 실행 로그/샘플 state
-│
-└─ rag/                                     # RAG + pgvector + ETL(데이터/검색 계층)
-   ├─ schema/
-   │  └─ init_db.sql                        # CREATE EXTENSION vector; doc/chunk/embedding 테이블, 인덱스
-   ├─ queries/
-   │  ├─ search.sql                         # Top-K 벡터 검색(SQL; access_scope 필터 포함)
-   │  ├─ maintenance.sql                    # 인덱스/통계 유지관리
-   │  └─ stats.sql                          # 검색 성능/품질 진단
-   ├─ services/
-   │  ├─ embedder.py                        # e5-small 등 임베딩 공용 래퍼(질문/패시지)
-   │  └─ retriever.py                       # 질문 임베딩→pgvector Top-K→ChunkDict 리스트 반환
-   ├─ etl/                                  # (업로드 미사용이지만 ETL 파이프는 유지)
-   │  ├─ extract/                           # [E]: 원천 데이터 수집(크롤/기등록 데이터 로드)
-   │  │  └─ ...                             # 미사용 시 비워두기
-   │  ├─ transform/                         # [T]: 파싱/클리닝/청킹
-   │  │  ├─ parser_pdf.py                   # PDF→text
-   │  │  ├─ parser_html.py                  # HTML→text
-   │  │  ├─ cleaner.py                      # 노이즈 제거/정규화
-   │  │  └─ chunker.py                      # 문단/슬라이딩 윈도우 청킹
-   │  ├─ embed/                             # 임베딩 생성(패시지용)
-   │  │  ├─ model_e5.py                     # multilingual-e5-small 호출 래퍼
-   │  │  └─ embed_runner.py                 # 청크 임베딩 배치 실행
-   │  └─ load/                              # [L]: DB 적재/인덱싱
-   │     ├─ db_writer.py                    # doc/chunk/embedding insert/upsert
-   │     └─ index_builder.py                # ivfflat 튜닝(lists/probes)
-   ├─ data/                                 # 원문/청크/임베딩 파일(csv/jsonl 등)
-   └─ assets/                               # (선택) ERD/ETL 흐름도/운영 문서 이미지
+### 🎯 타겟 사용자
+* 의료 연구자(Researcher)  
+* 임상의(Physician)  
+* 의과대학 대학원생(Medical Grad Student)  
+* 임상시험 코디네이터(Clinical Trial Coordinator)
+
+### 🎯 타겟 요구사항
+* 최신 가이드라인·논문 근거를 빠르게 확인하고, 진료 의사결정을 위한 **정확한 근거 중심 답변**을 필요로 함.
+* 논문 구조 요약, 연구방법 해석, 발표 준비를 위한 **체계적·단계별 요약 기능**과 후속 질문 생성이 필요함.
+* Eligibility 조건, ECOG/lab cutoff 등 기준 정보를 **정확하게 정규화·추출**해주는 기능을 요구함.
+* 특정 biomarker/outcome 기준으로 **연관 연구 탐색**, 근거 스니펫 추출, 비교 가능한 정리 기능이 필요함.
+
+## [프로젝트 구조]
+
+```text  
+SKN18-4th-4team/  
+├─ infra/                     # 로컬/배포 인프라 구성  
+│  ├─ docker-compose.yml      # Postgres+pgvector+Django 컨테이너 오케스트레이션  
+│  └─ nginx.conf              # 배포용 리버스 프록시 설정  
+├─ scripts/                   # 데이터베이스/임베딩 파이프라인을 돌리는 독립 스크립트 모음  
+│  ├─ init_db.sql             # pgvector 확장 및 기본 스키마 생성  
+│  └─ init_models.sql/.py     # RAG 모델 구조 초기화/등록  
+├─ django_app/                # Django 기반 웹/백오피스/챗봇 API  
+│  ├─ manage.py               # Django 관리자 CLI 엔트리  
+│  ├─ config/                 # settings/env 로더/urls/wsgi/asgi 등 전역 설정  
+│  ├─ accounts/               # 인증·권한·프로필 관련 앱  
+│  ├─ chat/                   # 챗봇 도메인의 모델, 서비스, API, LLM 연동  
+│  ├─ main/                   # 랜딩 및 일반 페이지 뷰  
+│  ├─ templates/              # SSR 템플릿(base, partials, 앱별 화면)  
+│  ├─ static/                 # 원본 정적 리소스(css/js/img)  
+│  └─ uploads/                # 사용자 업로드 파일(예: 프로필 이미지)  
+├─ graph/                     # LangGraph 기반 LLM 워크플로 정의  
+│  ├─ compile.py              # 그래프 빌드 엔트리포인트  
+│  ├─ state.py                # 공유 state 스키마 및 업데이트 로직  
+│  ├─ llm_client.py           # LLM 추상화/호출 래퍼  
+│  ├─ nodes/                  # classifier/retrieval/answer/web-search 등 개별 노드  
+│  ├─ memory/                 # 체크포인터·대화 기록 영속화  
+│  └─ data/                   # 그래프 실행 예시/샘플 상태  
+├─ rag/                       # RAG 데이터 계층 + ETL 파이프라인  
+│  ├─ schema/                 # 문서/청크/임베딩 스키마 SQL  
+│  ├─ queries/                # 검색·유지보수·통계 SQL 및 chat_memory.sqlite3  
+│  ├─ services/               # embedder/retriever/vectorstore/DB 풀 모듈  
+│  ├─ etl/                    # extract/transform/embed/load 단계 스크립트  
+│  │  ├─ extract/             # 원천 데이터 적재 템플릿  
+│  │  ├─ transform/           # 파싱·클리닝·청킹 도구  
+│  │  ├─ embed/               # 임베딩 생성 러너  
+│  │  └─ load/                # DB 적재 및 인덱스 빌더  
+│  └─ data/                   # 문서/청크/임베딩 샘플 데이터  
+└─ graph/ask.py               # LangGraph와 Django 중간 호출 유틸  
 ```
 
+## [도구/기술]
 
-- 역할 분담 폴더 수정 금지
-  - 역할 분담 폴더 내 하위 폴더 변경/수정 가능
-- **django_app/**
-  - 백오피스 : adminui, docs
-- **scripts/**
-  - 루트 실행 스크립트, 전체 파이프라인을 조합하고 실행, 
-  - 즉, ETL 모듈을 불러와서 실제로 실행시키는 역할만 담당
-  - seed_docs.py : 샘플 문서와 청크 데이터를 DB에 ‘최초로’ 넣는 스크립트
-  - embed_reindex.py : 벡터 임베딩 생성 및 인덱스 재구축
-  
-| 파일 경로                    | 목적                                 | 실행 시점                                        | 특징                                           |
-| ------------------------ | ---------------------------------- | -------------------------------------------- | -------------------------------------------- |
-| `scripts/init_db.sql`    | **DB 전체 초기화용 (infra/compose와 함께)** | `docker-compose up` 할 때 자동 실행                | DB 확장(`CREATE EXTENSION vector`) + 공용 스키마 세팅 |
-| `rag/schema/init_db.sql` | **RAG용 스키마 정의 (문서/청크/임베딩 관련)**     | 수동 실행(`psql -f` or `scripts/seed_docs.py` 전) | `docs`, `chunks`, `embeddings` 등 도메인 스키마 중심  |
+#### **Environment**    
+![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-007ACC?style=for-the-badge&logo=Visual%20Studio%20Code&logoColor=white)    
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=Git&logoColor=white)    
+![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=GitHub&logoColor=white)    
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)  
 
+#### **Development**    
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)    
+![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)    
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)  
 
-- **rag/**
-  - index_builder.py
-    - pgvector 인덱스를 “어떻게 쪼개서, 얼마나 빠르게 검색할지”를 결정하고, 이를 자동 튜닝하는 스크립트
-    - LLM이 질문할 때 → retriever가 벡터 검색을 하기 전 → “어떤 방식으로 벡터를 인덱싱해둘지”를 설정해주는 역할
-    - ivfflat 인덱스 : pgvector는 일반 B-tree 대신 “IVFFLAT(Indexed Vector Flat)” 구조를 사용
-    - IVFFLAT은 단순히 인덱스를 만드는 게 아니라, K-means clustering으로 벡터 공간을 “lists” 개수만큼 쪼갠다.
+#### **Database / Infrastructure**    
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)    
+![pgvector](https://img.shields.io/badge/pgvector-4B8BBE?style=for-the-badge&logo=postgresql&logoColor=white)    
+![SQLite3](https://img.shields.io/badge/SQLite3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)  
 
+#### **Communication**    
+![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)
 
+## [요구사항]
 
----
+**1️⃣ 데이터 수집 및 전처리 모듈**
+- 의학 문헌(가이드라인, 논문, 교과서, 동의서 등)을 안정적으로 수집하고, RAG에 활용할 수 있는 정제된 텍스트 데이터로 변환한다.
 
-# LangGraph
+**2️⃣ 질의 응답 플로우 설계 및 구축 (LangGraph 기반 오케스트레이션)**
+- 의료 질문이 들어왔을 때, 일관된 흐름으로 처리되도록 LangGraph 기반 워크플로우를 설계한다.
+- LangGraph는 다음 노드들을 그래프 형태로 연결하여,  질문 1건당 하나의 “추론 파이프라인”으로 실행되도록 구성.
+- 메모리 → 질문 분류 → 용어 판별 → 검색/웹서치 → 검증 → 답변 생성 → 메모리 기록 → 답변 출력
 
-- 내/외부 의사 결정
-```mermaid
-flowchart TD
-    START([사용자 질의])
-    C[Classifier 노드<br/>의학 관련 여부 & 유형 분류]
-    G{의학 관련?}
-    H{의학 용어 질문?}
-    K[WebSearch 노드<br/>Tavily로 용어 정의 검색]
-    R[Retrieval 노드<br/>pgvector에서 관련 문서 검색]
-    A1[Answer 노드<br/>WebSearch 결과 요약·인용]
-    A2[Answer 노드<br/>RAG: 문서 근거 기반 응답]
-    N[안내 노드<br/>비의학 질문 처리 불가 안내]
-    E([응답])
+**3️⃣ RAG ETL 파이프라인 (pgvector 기반)**
+- 내외부 의료 문서를 RAG용 벡터 인덱스로 변환하는 ETL 파이프라인 구축
 
-    START --> C --> G
-    G -- 아니오(No) --> N --> E
-    G -- 예(Yes) --> H
-    H -- 예(Yes) --> K --> A1 --> E
-    H -- 아니오(No) --> R --> A2 --> E
-```
+**4️⃣ 웹 UI & 시각화 (Django SSR + JS)**
+- 연구자/의사가 실제로 사용할 수 있는 웹 인터페이스를 제공하고,  AI 대화·근거·통계를 한 화면에서 확인할 수 있게 한다.**
 
+**5️⃣ 관측·품질·로그 (Observability & Quality Tracking)**
+- 서비스 운영 중 무슨 질문에 어떤 답이 나갔고, 근거와 품질이 어땠는지 추적 가능하게 만든다.**
 
----
+## [수집 데이터]
+- AI-Hub 필수 의료 지식 : https://www.aihub.or.kr/aihubdata/data/view.do?&aihubDataSe=data&dataSetSn=71875
 
-# RAG
+## [화면 구성]
 
+- **도구** : Figma, HTML, CSS, Javascript
 
+<img width="1659" height="1001" alt="Image" src="https://github.com/user-attachments/assets/91f3a335-a66b-42a2-99e7-4aabc8f3fea6" />
 
+<img width="1645" height="1010" alt="Image" src="https://github.com/user-attachments/assets/8d374fa9-99d9-4feb-8d68-118dde04d28d" />
 
----
+<img width="1662" height="1006" alt="Image" src="https://github.com/user-attachments/assets/2770e24d-6903-43c9-8ac1-d6b5a12fb0cd" />
+
+<img width="1654" height="1007" alt="Image" src="https://github.com/user-attachments/assets/8e13d015-9954-40d0-85ae-a512059373dd" />
+
+<img width="1665" height="1007" alt="Image" src="https://github.com/user-attachments/assets/1d154ec5-4634-4957-a9fe-dc5031373d40" />
 
 
-# Web
 
-### 인증
-- SSR 기반 MVT 구조 - django.contrib.auth 이용
 
-```mermaid
-sequenceDiagram
-    participant U as User (브라우저)
-    participant J as chat.js
-    participant V as Django views.py
-    participant DB as PostgreSQL
+<img width="1664" height="1007" alt="Image" src="https://github.com/user-attachments/assets/037d2858-0dfe-489b-9547-912f0a65608a" />
 
-    U->>J: 메시지 입력
-    J->>V: POST /chat/api/conversations/<id>/messages/
-    V->>DB: Message insert + LLM 응답 저장
-    V-->>J: JSON({message:{id, role, content, citations}})
-    J-->>U: 메시지 + 참고문헌 렌더링
-
-    U->>J: 👍 클릭 (handleFeedback)
-    J->>V: PATCH /chat/api/messages/<id>/ {feedback:"positive"}
-    V->>DB: Message.feedback 업데이트
-    V-->>J: JSON({message:{feedback:"positive"}})
-    J-->>U: 피드백 버튼 색상 갱신
-```
-
+<img width="1661" height="1005" alt="Image" src="https://github.com/user-attachments/assets/ee71e97e-663b-40a6-92e9-a9d21ea36d0d" />

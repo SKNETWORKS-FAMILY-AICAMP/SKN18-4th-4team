@@ -115,10 +115,10 @@ SKN18-4th-4team/
 - 내외부 의료 문서를 RAG용 벡터 인덱스로 변환하는 ETL 파이프라인 구축
 
 **4️⃣ 웹 UI & 시각화 (Django SSR + JS)**
-- 연구자/의사가 실제로 사용할 수 있는 웹 인터페이스를 제공하고,  AI 대화·근거·통계를 한 화면에서 확인할 수 있게 한다.**
+- 연구자/의사가 실제로 사용할 수 있는 웹 인터페이스를 제공하고,  AI 대화·근거·통계를 한 화면에서 확인할 수 있게 한다.
 
 **5️⃣ 관측·품질·로그 (Observability & Quality Tracking)**
-- 서비스 운영 중 무슨 질문에 어떤 답이 나갔고, 근거와 품질이 어땠는지 추적 가능하게 만든다.**
+- 서비스 운영 중 무슨 질문에 어떤 답이 나갔고, 근거와 품질이 어땠는지 추적 가능하게 만든다.
 
 ## [수집 데이터]
 - AI-Hub 필수 의료 지식 : https://www.aihub.or.kr/aihubdata/data/view.do?&aihubDataSe=data&dataSetSn=71875
@@ -144,7 +144,7 @@ SKN18-4th-4team/
 
 # [설계]
 
-1. ## ETL
+## 1. ETL
 
 ```mermaid  
 flowchart LR
@@ -187,7 +187,7 @@ A --> B
 F --> G
 ```
 
-2. ## **시스템 구성 및 흐름도**
+## 2. **시스템 구성 및 흐름도**
 
 ```mermaid  
 flowchart TB
@@ -273,47 +273,59 @@ DJANGO --> X --> Y
  - **결과**: ETL 파이프라인 구축, 유사도 테스트를 통한 질문과 관련성 높은 청킹 추출  
  
 #### ETL  
-1) Cleaning:
- - Column 재정의
-   - c_id, source_spec, creation_year 문헌 레퍼런스 형식으로 재조합  
-   - ex) guide_kr_2023_1182_1  
-   - content 유지  
-   - 그 외 나머지 Column Drop
- - 숫자 + 온점(.) 클리닝
-   - 데이터 상에서 항목은 필요없음 → Drop
- - 인용구 Drop
-   - 번역 / 인용 구분 후 인용구만 Drop
- - 큰따옴표 클리닝
-   - Content 내에 있는 큰따옴표 클리닝
- - c_id 컬럼 내 연도가 2023.0 처럼 소수점이 있는 부분 소수점 Drop (2023.0 → 2023)
- - ( 5%)와 같이 ( 뒤에 공백이 있는 부분 strip
-2) Chunking:
- - 문장단위 Chunking
-   - . ! ? 로 끊기는 부분을 문장으로 인식, 3개의 갯수를 카운트하고 2문장 단위로 Chunking
-3) Embeding:  
- - OPENAI Model: text-embedding-3-small  
- - batch_size = 100  
- - 동기로 실행  
- - Dimension_size=1536  
- - 소요시간: 약 30분
+**1) Cleaning:**
 
-### pgvector  
-1) Data  
- - 원본 문서 수: 9686개  
- - pgvector 데이터 수: 116420개  
-2) Column  
- - id: Auto_Increament  
- - content: raw data  
- - embedding: Embedding Data  
- - metadata: c_id (Reference)
+  - Column 재정의
+   
+  - 숫자 + 온점(.) 클리닝
+  
+  - 인용구 Drop
+  
+  - 큰따옴표 클리닝
+  
+  - c_id 컬럼 내 연도가 2023.0 처럼 소수점이 있는 부분 소수점 Drop (2023.0 → 2023)
+  
+  - 공백이 있는 부분 strip
 
-### retriver  
+**2) Chunking:**
+  
+  - 문장 단위 Chunking
+
+**3) Embeding:**
+  
+  - OPENAI Model: **text-embedding-3-small**
+  
+  - batch_size = 100
+  
+  - Dimension_size=1536  
+  
+  - 소요시간: 약 30분
+
+#### pgvector  
+
+**1) Data**
+  
+  - 원본 문서 수: 9686개  
+  
+  - pgvector 데이터 수: 116420개  
+
+**2) Column**
+  
+  - id: Auto_Increament  
+  
+  - content: raw data  
+  
+  - embedding: Embedding Data  
+  
+  - metadata: c_id (Reference)
+
+#### retriver  
  1) Classify node에서 query embedding 진행  
  2) Similarity: 코사인 유사도 검색  
  3) TOP_K: 5개  
  4) 참조문헌: Metadata 사용 (단, 중복제외)
 
-### evaluation  
+#### evaluation  
  1) 질문과 코사인 유사도로 뽑힌 Chunk들의 관련성을 평가  
  2) 0~1점 사이로 점수를 LLM이 자체적으로 평가  
  3) 각 청크의 점수가 0.3점 이하면 Drop  
@@ -339,8 +351,10 @@ DJANGO --> X --> Y
   - **memory_write** : 질문과 Generate_answer에서 생성된 답변 원본과 summary, 채팅창 아이디(conversation_id)를 sqlLightDB에 저장  
     
   [ LangGraph 흐름도]  
-    
+  - **구상** 
   <img width="1740" height="853" alt="Image" src="https://github.com/user-attachments/assets/c16e607d-ee59-4bf5-b193-7180ffe85d19" />  
+  - **구현**
+  <img width="658" height="810" alt="Image" src="https://github.com/user-attachments/assets/23817daa-80a4-4b0e-9a2d-840fc400d9d0" />
     
   더 자세한 구현 사항은 issue를 참고해 주세요  
   ([https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN18-4th-4team/issues/47](https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN18-4th-4team/issues/47))
@@ -408,12 +422,72 @@ DJANGO --> X --> Y
 
 ## [평가]
 
-유사도 점수
-
+### 유사도 점수
 <img width="568" height="46" alt="Image" src="https://github.com/user-attachments/assets/7930a37a-bf1d-447f-88ae-ad79bb1bf162" />
 
-llm 평가
-
+### llm 평가
 <img width="248" height="61" alt="Image" src="https://github.com/user-attachments/assets/7e89c53a-5bc2-4ce7-85d6-1cc767cc20ef" />  
+
+
+## [인사이트]
+
+### 1) 기술적 인사이트
+- **RAG 파이프라인**
+ - RAG ETL(클리닝→청킹→임베딩→pgvector)을 처음부터 끝까지 직접 구현하며 데이터 파이프라인의 중요성을 체감
+ - 임베딩 품질·Top-K·코사인 유사도·메타데이터 기반 레퍼런싱 등 검색 품질 최적화 경험
+
+- **LangGraph**
+- Self-RAG의 "검색→평가→재작성" 구조를 LangGraph 오케스트레이션으로 구현해 고품질 답변 생성 흐름을 설계  
+- 노드 단위로 기능을 분리해 재사용성과 확장성을 확보하는 구조적 AI 파이프라인 설계 경험
+
+- **WEB**
+- Django + LangGraph + pgvector + OpenAI 조합으로 웹/LLM/DB가 연결된 엔드투엔드 시스템을 구축
+- 인증·세션·파일업로드·REST API·관측지표 등 실제 서비스 수준의 백엔드 구성 요소 경험
+
+### 2) 도메인 인사이트 (의료·임상)
+- **의료 문헌 구조와 RAG 영향도**  
+  - 의료 문헌은 형식이 매우 다양해 Cleaning 규칙과 Chunk 크기가 RAG 정확도에 직접적 영향
+  - 2문장 단위 청킹처럼 ‘문맥 유지 + 검색 정밀도’를 동시에 만족시키는 전략의 필요성을 이해
+
+- **근거 기반(Evidence-based) 답변 구조의 필요성**  
+  - 의료 RAG는 신뢰성이 핵심이므로 evaluate_chunk, reference_type, citations가 필수
+  - 단순 요약보다 근거 기반(Evidence-based) 구조적 답변이 의료 도메인에서는 기본 요구사항임을 이해
+
+- **의료 종사자의 실제 요구사항**  
+  - 의사·연구자는 1줄 요약~전체 구조(B/M/R/C)까지 다양한 형태의 요약을 필요
+  - 개념그래프·후속 질문·용어 검색 등 실제 현장에서 바로 쓰이는 기능 니즈를 파악
+
+- **데이터 업데이트와 ETL 자동화 필요성**  
+  - 의료 문서는 잦은 업데이트가 발생하므로 ETL 자동화와 재현성이 필수
+  - 신규 가이드라인·논문 반영 시 파이프라인 재실행만으로 최신 상태를 유지하는 구조 이해
+
+### 3) 아키텍처·서비스 인사이트
+- **RAG–LangGraph의 역할 분리와 상호 보완성**  
+  - RAG와 LangGraph는 역할이 중복되지 않고, 검색 품질과 파이프라인 orchestration을 서로 보완
+  - 기능을 분리해 설계하면 유지보수성과 확장성이 크게 향상됨을 확인
+
+- **LLM 기반 웹서비스 설계 요소**  
+  - LLM 웹서비스는 슬러그 기반 대화 구조·피드백·메트릭·참고문헌 등 품질 관리 설계
+  - 단순한 챗봇이 아니라 “안전하고 검증 가능한 AI 출력”을 요구하는 실제 서비스 기획 방식 경험
+
+- **LangGraph의 오케스트레이션 역할**  
+  - LangGraph는 Django·pgvector·OpenAI 사이의 조정자(오케스트레이터)로 엔드투엔드 흐름을 통제
+  - 분기·루프·상태 전달을 명확히 정의하여 안정적이고 예측 가능한 AI 워크플로우를 구성
+
+
+## [이슈]
+- Github Issues
+  - https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN18-4th-4team/issues?q=is%3Aissue%20state%3Aclosed 
+
+
+[느낀점]
+- 병장 정동석 : 지난 단위프로젝트에서 발전시킬 부분을 팀원들과 같이 회의를 통해 정의하고 목표한 수준의 기능을 구현하기 위해 고민하고 노력하는 것에서 재미를 느꼈습니다. 부족한 팀장을 정말 많이 도와주면서 각자가 맡은 일을 잘 해준 팀원들에게 감사합니다
+- 최준호 : 지난 프로젝트와 비슷하게 RAG, langgraph를 거친 후 llm 테스트를 하게 되었습니다. 이 프로젝트를 진행하다보니, 강사님께서 강조하신 “설계”의 중요성을 느끼게 되었습니다. 아무래도 2주라는 기간동안 구현해야 하다보니, 바로 langgraph를 구성하는 과정에서 의도치 않은 노드 실행(Web Search가 왜 되었는가?)이 발생하거나, 추후 memory 등 노드 추가하는 과정에 대해서, classify에서 관련없다고 결론났습니다. 이 경험을 토대로 final project를 비롯하여 LLM관련하여 프로젝트를 진행할 때, 어떻게 설계를 해야할지 조금이라도 방향성을 잡는 계기가 되었던 것 같습니다. 
+- 이상효 : 혜진누나랑 같이 프로젝트를 진행하면서 파이널 프로젝트를 PM으로서 어떻게 진행해야 될 지 좋은 reference를 얻었습니다. 혜진누나 감사합니다. 팀장님이 굉장히 열정적이셔서 같이 많은 기능을 구현하였습니다. 팀장님 너무 감사했습니다. 메모리 관련으로 멘탈이 한번 나갔는데 인하씨가 열심히 해줘서 메모리 기능을 잘 구현했던것 같습니다. 인하씨가 너무 잘해서 제가 편했습니다. 고마워용. 데이터 전처리 같이 해준 준호형님도 고생하셨습니다. 나의 단위조 도파민 담당이였던 시현이랑 같이 해서 재미있게 단위프로젝트를 마무리 할 수 있었습니다. 파이널때도 부탁해… 
+- 안시현 : 이번 단위 프로젝트를 진행하면서 부족했던 부분을 좋은 팀원들에게 많이 배울 수 있어서 정말 좋은 기회였습니다! LangGraph를 설계해보며 지난 단위에서 RAG 에 직접적으로 기여한게 없는 것 같아서 아쉬웠는데 이번에 직접 LangGraph를 설계해보면서 정말 재미있었고 설계의 중요성을 느낄 수 있었습니다. 우리 팀원들 최고!
+- 정인하 : RAG, LangGraph를 활용하는 프로젝트를 다시 함으로써 관련 기술에 대한 이해도가 크게 높아질 수 있는 계기가 되어 좋았습니다. 
+- 황혜진 : AI·RAG·LangGraph가 결합된 전체 흐름을 웹 서비스로 구현하면서, 단순한 화면 개발을 넘어 데이터·LLM·오케스트레이션까지 하나로 연결되는 구조가 복잡하고 고민이 많았지만 그만큼의 보람을 느꼈다.
+
+
 
 

@@ -295,34 +295,20 @@ sequenceDiagram
  
 #### 1) ETL  
 
-**- Cleaning:**
-  - Column 재정의, 숫자/온점/따옴표 클리닝, 인용구 Drop, c_id 컬럼 소수점 Drop ,공백 strip
-
-**- Chunking:**
-  - 문장 단위 Chunking
-
-**- Embeding:**
-  
+- **Cleaning:** Column 재정의, 숫자/온점/따옴표 클리닝, 인용구 Drop, c_id 컬럼 소수점 Drop ,공백 strip
+- **Chunking:** 문장 단위 Chunking
+- **Embeding:**
   - OPENAI Model: **text-embedding-3-small**
-  
   - batch_size = 100 / Dimension_size=1536 / 소요시간: 약 30분
 
 #### 2) pgvector  
-
-**- Data**
-  
+- **Data**
   - 원본 문서 수: 9686개  
-  
   - pgvector 데이터 수: 116420개  
-
-**- Column**
-  
+- **Column**
   - id: Auto_Increament  
-  
   - content: raw data  
-  
   - embedding: Embedding Data  
-  
   - metadata: c_id (Reference)
 
 #### 3) retriver  
@@ -417,26 +403,26 @@ sequenceDiagram
     - **POST · `/accounts/profile-image/`**  
       - 프로필 이미지를 업로드. 인증 여부와 파일 크기를 체크한 뒤 저장된 이미지 경로 반환  
   - **Chat**  
-  - **GET/POST · `/chat/api/conversations/`**  
-* GET: 사용자의 전체 대화 목록 조회  
-* POST: 새 대화 생성  
-  - **GET/DELETE · `/chat/api/conversations/<id>/`**  
-    - 특정 대화를 조회하거나 삭제(soft delete, archive)  
-  - **POST · `/chat/api/conversations/<id>/messages/`**  
-    - 사용자 메시지를 저장한 뒤, LangGraph/LLM을 호출하여 AI 답변과 참고문헌(citations)을 함께 반환  
-  - **PATCH · `/chat/api/messages/<id>/`**  
-    -  특정 메시지에 대해 **긍정/부정 평가와 사유**를 저장하거나 삭제  
-  - **POST · `/chat/api/messages/<id>/concept-graph/`**  
-    -  AI 응답 내용을 기반으로 **Mermaid 다이어그램 코드**를 생성하고 캐시  
-  - **POST · `/chat/api/messages/<id>/related-questions/`**  
-    -  AI 응답을 분석하여 **연관 후속 질문 3개**를 생성  
+    - **GET/POST · `/chat/api/conversations/`**  
+      - GET: 사용자의 전체 대화 목록 조회  
+      - POST: 새 대화 생성  
+    - **GET/DELETE · `/chat/api/conversations/<id>/`**  
+      - 특정 대화를 조회하거나 삭제(soft delete, archive)  
+    - **POST · `/chat/api/conversations/<id>/messages/`**  
+      - 사용자 메시지를 저장한 뒤, LangGraph/LLM을 호출하여 AI 답변과 참고문헌(citations)을 함께 반환  
+    - **PATCH · `/chat/api/messages/<id>/`**  
+      -  특정 메시지에 대해 **긍정/부정 평가와 사유**를 저장하거나 삭제  
+    - **POST · `/chat/api/messages/<id>/concept-graph/`**  
+      -  AI 응답 내용을 기반으로 **Mermaid 다이어그램 코드**를 생성하고 캐시  
+    - **POST · `/chat/api/messages/<id>/related-questions/`**  
+      -  AI 응답을 분석하여 **연관 후속 질문 3개**를 생성  
 - **향후 개선 방향**:  
   - 사용자별 피드백 통계  
   - 피드백 기반 AI 메모리 개선  
   - 모델별 응답 비교 기능  
   - 관리자 페이지 강화
 
-## [평가]
+## [평가/결과]
 
 ### 유사도 점수
 <img width="568" height="46" alt="Image" src="https://github.com/user-attachments/assets/7930a37a-bf1d-447f-88ae-ad79bb1bf162" />
@@ -444,21 +430,27 @@ sequenceDiagram
 ### llm 평가
 <img width="248" height="61" alt="Image" src="https://github.com/user-attachments/assets/7e89c53a-5bc2-4ce7-85d6-1cc767cc20ef" />  
 
+### 메모리
+<img width="1230" height="982" alt="Image" src="https://github.com/user-attachments/assets/778bc47a-0dee-4e75-a8a8-00e9fda56aab" />
+
+### pgvector
+<img width="1455" height="629" alt="Image" src="https://github.com/user-attachments/assets/a359d3f7-1994-45a4-8f27-6bfca893d039" />
+
+### WebSearch
+<img width="1541" height="705" alt="Image" src="https://github.com/user-attachments/assets/892a5f06-e655-46bb-bbb3-9923a0f7ca8b" />
 
 ## [인사이트]
 
 ### 1) 기술적 인사이트
 - **RAG 파이프라인**
- - RAG ETL(클리닝→청킹→임베딩→pgvector)을 처음부터 끝까지 직접 구현하며 데이터 파이프라인의 중요성을 체감
- - 임베딩 품질·Top-K·코사인 유사도·메타데이터 기반 레퍼런싱 등 검색 품질 최적화 경험
-
+  - RAG ETL(클리닝→청킹→임베딩→pgvector)을 처음부터 끝까지 직접 구현하며 데이터 파이프라인의 중요성을 체감
+  - 임베딩 품질·Top-K·코사인 유사도·메타데이터 기반 레퍼런싱 등 검색 품질 최적화 경험
 - **LangGraph**
-- Self-RAG의 "검색→평가→재작성" 구조를 LangGraph 오케스트레이션으로 구현해 고품질 답변 생성 흐름을 설계  
-- 노드 단위로 기능을 분리해 재사용성과 확장성을 확보하는 구조적 AI 파이프라인 설계 경험
-
+  - Self-RAG의 "검색→평가→재작성" 구조를 LangGraph 오케스트레이션으로 구현해 고품질 답변 생성 흐름을 설계  
+  - 노드 단위로 기능을 분리해 재사용성과 확장성을 확보하는 구조적 AI 파이프라인 설계 경험
 - **WEB**
-- Django + LangGraph + pgvector + OpenAI 조합으로 웹/LLM/DB가 연결된 엔드투엔드 시스템을 구축
-- 인증·세션·파일업로드·REST API·관측지표 등 실제 서비스 수준의 백엔드 구성 요소 경험
+  - Django + LangGraph + pgvector + OpenAI 조합으로 웹/LLM/DB가 연결된 엔드투엔드 시스템을 구축
+  - 인증·세션·파일업로드·REST API·관측지표 등 실제 서비스 수준의 백엔드 구성 요소 경험
 
 ### 2) 도메인 인사이트 (의료·임상)
 - **의료 문헌 구조와 RAG 영향도**  

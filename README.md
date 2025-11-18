@@ -266,6 +266,27 @@ end
 DJANGO --> X --> Y
 ```
 
+- 시퀀스 다이어그램(Sequence Diagram)
+```mermaid
+sequenceDiagram
+    participant U as User (브라우저)
+    participant J as chat.js
+    participant V as Django views.py
+    participant DB as PostgreSQL
+
+    U->>J: 메시지 입력
+    J->>V: POST /chat/api/conversations/<id>/messages/
+    V->>DB: Message insert + LLM 응답 저장
+    V-->>J: JSON({message:{id, role, content, citations}})
+    J-->>U: 메시지 + 참고문헌 렌더링
+
+    U->>J: 👍 클릭 (handleFeedback)
+    J->>V: PATCH /chat/api/messages/<id>/ {feedback:"positive"}
+    V->>DB: Message.feedback 업데이트
+    V-->>J: JSON({message:{feedback:"positive"}})
+    J-->>U: 피드백 버튼 색상 갱신
+```
+
 ## [구현]
 
 ### 1. RAG
@@ -333,12 +354,22 @@ DJANGO --> X --> Y
     **rewrite_query** : evaluate_chunk에서 낮은 점수가 나오면 llm이 질문을 재작성하여 retriver로 전달(최대 1번)  
   - **WebSearch** : Tavily를 사용해 의학 용어 정의 검색  
   - **Generate_answer** : 답변 형식 고정, llm 판단 점수출력, 출처 추출  
-  - **memory_write** : 질문과 Generate_answer에서 생성된 답변 원본과 summary, 채팅창 아이디(conversation_id)를 sqlLightDB에 저장  
+  - **memory_write** : 질문과 Generate_answer에서 생성된 답변 원본과 summary, 채팅창 아이디(conversation_id)를 sqlLightDB에 저장
+
+- **메모리 시스템**
+  - LLM 에이전트는 기본적으로 금붕어 뇌와 같아서, 그래프가 한 턴 실행될 때마다 바로 전 문장도 잊어버리는 특성
+  - MemorySaver는 이 에이전트에게 블랙박스(기억 장치)를 달아주는 역할
+  - 각 대화에서 중요한 순간만 캡처해 저장하고, 다음 턴에서 필요할 때만 적절히 불러와 사고 흐름에 삽입
+  - **결론** : 에이전트는 이전 대화를 전부 기억하지 않아도 안정적인 추론 흐름을 유지 가능
     
   [ LangGraph 흐름도]  
+
   - **구상** 
+  
   <img width="1740" height="853" alt="Image" src="https://github.com/user-attachments/assets/c16e607d-ee59-4bf5-b193-7180ffe85d19" />  
+
   - **구현**
+  
   <img width="658" height="810" alt="Image" src="https://github.com/user-attachments/assets/23817daa-80a4-4b0e-9a2d-840fc400d9d0" />
     
   더 자세한 구현 사항은 issue를 참고해 주세요  

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import sys
+import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
@@ -186,3 +187,133 @@ def generate_concept_graph(message: Message) -> str:
     response = llm.invoke([system_prompt, user_prompt])
     graph_code = response.content if hasattr(response, "content") else str(response)
     return graph_code.strip()
+
+
+def _clean_question_text(text: str) -> str:
+    """
+    Remove wrapping 기호/따옴표 등을 정리하고 의미 없는 토큰은 빈 문자열로 반환.
+    """
+    if text is None:
+        return ""
+    cleaned = str(text).strip()
+    if not cleaned:
+        return ""
+    # remove trailing commas/brackets commonly returned by code blocks
+    cleaned = cleaned.strip(",")
+    cleaned = cleaned.strip()
+
+    if cleaned.startswith("["):
+        cleaned = cleaned.lstrip("[ ")
+    if cleaned.endswith("]"):
+        cleaned = cleaned.rstrip("] ")
+
+    def _strip_matching_quotes(value: str) -> str:
+        while len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'", "`"}:
+            value = value[1:-1].strip()
+        return value
+
+    cleaned = _strip_matching_quotes(cleaned)
+    cleaned = cleaned.strip()
+
+    junk_tokens = {"", "[", "]", "[,", ",]", "json", "```json", "```", "`json", "`"}
+    if cleaned.lower() in junk_tokens:
+        return ""
+    if cleaned.startswith("```") or cleaned.endswith("```"):
+        return ""
+    return cleaned
+
+
+def _normalize_questions(raw: str) -> List[str]:
+    """
+    LLM 응답 문자열을 안전하게 파싱하여 질문 리스트로 변환.
+    """
+    questions: List[str] = []
+    cleaned = (raw or "").strip()
+    if not cleaned:
+        return questions
+
+    try:
+        data = json.loads(cleaned)
+    except json.JSONDecodeError:
+        data = None
+
+    if isinstance(data, dict):
+        # {"questions": [...]} 또는 {"items": [...]} 형태 지원
+        for key in ("questions", "items", "data"):
+            if key in data and isinstance(data[key], Sequence):
+                data = data[key]
+                break
+
+    if isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+        for item in data:
+            if isinstance(item, str):
+                text = item.strip()
+            elif isinstance(item, dict):
+                text = (
+                    item.get("question")
+                    or item.get("text")
+                    or item.get("value")
+                    or ""
+                )
+                text = text.strip()
+            else:
+                text = str(item).strip()
+            cleaned_text = _clean_question_text(text)
+            if cleaned_text:
+                questions.append(cleaned_text)
+        if questions:
+            return _dedupe_limit(questions)
+
+    # JSON 파싱 실패 시 라인 나누기 방식
+    for line in cleaned.replace("\r", "\n").split("\n"):
+        candidate = line.strip()
+        if not candidate:
+            continue
+        # "- 1. 질문" 형태 정규화
+        candidate = candidate.lstrip("-*•0123456789.) ").strip()
+        candidate = _clean_question_text(candidate)
+        if candidate:
+            questions.append(candidate)
+        if len(questions) >= 6:
+            break
+    return _dedupe_limit(questions)
+
+
+def _dedupe_limit(items: List[str], limit: int = 3) -> List[str]:
+    seen = set()
+    result: List[str] = []
+    for item in items:
+        if item in seen:
+            continue
+        seen.add(item)
+        result.append(item)
+        if len(result) >= limit:
+            break
+    return result
+
+
+def generate_related_questions(message: Message) -> List[str]:
+    """
+    AI 응답 메시지를 기반으로 MemorySaver에 도움이 되는 연관 질문을 생성.
+    """
+    llm = get_llm()
+    system_prompt = SystemMessage(
+        content=(
+            "너는 의료 연구 대화를 이어가는 연관 질문 전문가다. "
+            "주어진 AI 응답 내용을 이해하고, MemorySaver 노드가 맥락을 축적할 수 있도록 "
+            "핵심 정보(질병, 연구대상, 한계점, 다음 단계)를 구체적으로 참조한 한국어 질문 3개를 만들어라. "
+            "임상시험, 치료법, 근거 데이터 등 답변에 언급된 세부 사항을 활용하라. "
+            "반드시 JSON 배열 문자열만 출력하고, 각 항목은 짧고 행동지향적인 하나의 질문 문장이어야 한다."
+        )
+    )
+    user_prompt = HumanMessage(
+        content=(
+            "다음 AI 응답을 참고하여 연관 질문 3개를 만들어 주세요. "
+            "각 질문은 서로 다른 시각을 제공하고, 후속 대화에서 기억 관리가 쉬운 형태여야 합니다.\n\n"
+            f"AI 응답:\n{message.content}"
+        )
+    )
+    response = llm.invoke([system_prompt, user_prompt])
+    raw_content = response.content if hasattr(response, "content") else str(response)
+    questions = _normalize_questions(raw_content)
+    return questions[:3]

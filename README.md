@@ -272,44 +272,29 @@ DJANGO --> X --> Y
  - **목적**: 데이터 전처리~ 임베딩(ETL) 모듈화 및 진행 후 유저의 질문의 유사도가 높은 청킹데이터 추출  
  - **결과**: ETL 파이프라인 구축, 유사도 테스트를 통한 질문과 관련성 높은 청킹 추출  
  
-#### ETL  
-**1) Cleaning:**
+#### 1) ETL  
 
-  - Column 재정의
-   
-  - 숫자 + 온점(.) 클리닝
-  
-  - 인용구 Drop
-  
-  - 큰따옴표 클리닝
-  
-  - c_id 컬럼 내 연도가 2023.0 처럼 소수점이 있는 부분 소수점 Drop (2023.0 → 2023)
-  
-  - 공백이 있는 부분 strip
+**- Cleaning:**
+  - Column 재정의, 숫자/온점/따옴표 클리닝, 인용구 Drop, c_id 컬럼 소수점 Drop ,공백 strip
 
-**2) Chunking:**
-  
+**- Chunking:**
   - 문장 단위 Chunking
 
-**3) Embeding:**
+**- Embeding:**
   
   - OPENAI Model: **text-embedding-3-small**
   
-  - batch_size = 100
-  
-  - Dimension_size=1536  
-  
-  - 소요시간: 약 30분
+  - batch_size = 100 / Dimension_size=1536 / 소요시간: 약 30분
 
-#### pgvector  
+#### 2) pgvector  
 
-**1) Data**
+**- Data**
   
   - 원본 문서 수: 9686개  
   
   - pgvector 데이터 수: 116420개  
 
-**2) Column**
+**- Column**
   
   - id: Auto_Increament  
   
@@ -319,18 +304,18 @@ DJANGO --> X --> Y
   
   - metadata: c_id (Reference)
 
-#### retriver  
- 1) Classify node에서 query embedding 진행  
- 2) Similarity: 코사인 유사도 검색  
- 3) TOP_K: 5개  
- 4) 참조문헌: Metadata 사용 (단, 중복제외)
+#### 3) retriver  
+ - Classify node에서 query embedding 진행  
+ - Similarity: 코사인 유사도 검색  
+ - TOP_K: 5개  
+ - 참조문헌: Metadata 사용 (단, 중복제외)
 
-#### evaluation  
- 1) 질문과 코사인 유사도로 뽑힌 Chunk들의 관련성을 평가  
- 2) 0~1점 사이로 점수를 LLM이 자체적으로 평가  
- 3) 각 청크의 점수가 0.3점 이하면 Drop  
- 4) chunk가 1개 이상 뽑히면 → Generate_Answer  
- 5) chunk가 1개도 안뽑히면(0개) → rewrite_query 
+#### 4) evaluation  
+ - 질문과 코사인 유사도로 뽑힌 Chunk들의 관련성을 평가  
+ - 0~1점 사이로 점수를 LLM이 자체적으로 평가  
+ - 각 청크의 점수가 0.3점 이하면 Drop  
+ - chunk가 1개 이상 뽑히면 → Generate_Answer  
+ - chunk가 1개도 안뽑히면(0개) → rewrite_query 
 
 
 ## 2. LangGraph

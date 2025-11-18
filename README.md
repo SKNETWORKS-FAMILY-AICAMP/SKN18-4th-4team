@@ -121,7 +121,9 @@ SKN18-4th-4team/
 - 서비스 운영 중 무슨 질문에 어떤 답이 나갔고, 근거와 품질이 어땠는지 추적 가능하게 만든다.
 
 ## [수집 데이터]
-- AI-Hub 필수 의료 지식 : https://www.aihub.or.kr/aihubdata/data/view.do?&aihubDataSe=data&dataSetSn=71875
+- **AI-Hub 필수 의료 지식**
+  - https://www.aihub.or.kr/aihubdata/data/view.do?&aihubDataSe=data&dataSetSn=71875
+  - 학술 논문 및 저널, 온라인 의료 정보 제공 사이트, 정부기관 가이드라인, 학회 가이드라인, 국제기관 가이드라인, 의학 교과서, 기타 (수술/검사/기타 동의서)
 
 ## [화면 구성]
 

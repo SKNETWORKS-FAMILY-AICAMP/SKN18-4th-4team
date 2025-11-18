@@ -110,6 +110,21 @@
 
 {% include "chat/chat_graph.html" %}
 
+<div id="relatedQuestionsModal" class="related-modal hidden" role="dialog" aria-modal="true">
+  <div class="related-modal__backdrop"></div>
+  <div class="related-modal__content">
+    <button
+      type="button"
+      id="relatedQuestionsModalCloseBtn"
+      class="related-modal__close"
+      aria-label="연관 질문 모달 닫기"
+    >
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div id="relatedQuestionsModalBody" class="related-modal__body"></div>
+  </div>
+</div>
+
 <div id="feedbackModal" class="feedback-modal hidden">
   <div class="feedback-modal__content">
     <h3>무엇이 문제였나요?</h3>

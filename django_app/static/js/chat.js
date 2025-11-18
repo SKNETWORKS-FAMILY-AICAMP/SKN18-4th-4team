@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const conversationBaseUrl = conversationsUrl.endsWith("/") ? conversationsUrl : `${conversationsUrl}/`;
   const messageFeedbackBaseUrl = "/chat/api/messages/";
   const conceptGraphBaseUrl = "/chat/api/messages/";
+  const relatedQuestionsBaseUrl = "/chat/api/messages/";
 
   const state = {
     conversations: [],
@@ -31,12 +32,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedbackCancelBtn = document.getElementById("feedbackCancelBtn");
   const feedbackSubmitBtn = document.getElementById("feedbackSubmitBtn");
   const feedbackRemoveBtn = document.getElementById("feedbackRemoveBtn");
+  const relatedModal = document.getElementById("relatedQuestionsModal");
+  const relatedModalBody = document.getElementById("relatedQuestionsModalBody");
+  const relatedModalCloseBtn = document.getElementById("relatedQuestionsModalCloseBtn");
+  const relatedModalBackdrop = relatedModal ? relatedModal.querySelector(".related-modal__backdrop") : null;
   initUserProfile(user);
   hydrateInitialConversations();
   renderChatHistory();
   renderMessages();
   refreshConversations();
   attachStaticHandlers();
+  if (relatedModalCloseBtn) {
+    relatedModalCloseBtn.addEventListener("click", closeRelatedQuestionsModal);
+  }
+  if (relatedModalBackdrop) {
+    relatedModalBackdrop.addEventListener("click", closeRelatedQuestionsModal);
+  }
+  if (relatedModalBody) {
+    relatedModalBody.addEventListener("click", handleRelatedQuestionSelection);
+  }
 
   // ---------------------------------------------------------------------------
   function initUserProfile(profile) {
@@ -275,10 +289,16 @@ document.addEventListener("DOMContentLoaded", () => {
               ${
                 shouldHideGraph
                   ? ""
-                  : `<button class="message-graph-btn" type="button" data-message-id="${msg.id}">
-                      <i class="fa-solid fa-diagram-project"></i>
-                      그래프 그리기
-                    </button>`
+                  : `<div class="message-tool-buttons">
+                      <button class="message-tool-btn message-graph-btn" type="button" data-message-id="${msg.id}">
+                        <i class="fa-solid fa-diagram-project"></i>
+                        그래프 그리기
+                      </button>
+                      <button class="message-tool-btn message-related-btn" type="button" data-message-id="${msg.id}">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        연관 질문 생성
+                      </button>
+                    </div>`
               }
             </div>
           </div>
@@ -305,6 +325,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const graphBtn = wrapper.querySelector(".message-graph-btn");
         if (graphBtn) {
           graphBtn.addEventListener("click", () => handleGraphButtonClick(graphBtn, msg.id));
+        }
+        const relatedBtn = wrapper.querySelector(".message-related-btn");
+        if (relatedBtn) {
+          relatedBtn.addEventListener("click", () => handleRelatedQuestionsButtonClick(msg.id));
         }
       }
     });
@@ -376,6 +400,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function formatMessageContent(content) {
     return content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+  }
+
+  function escapeHtml(text = "") {
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return String(text).replace(/[&<>"']/g, (char) => map[char]);
   }
 
   function renderReferences(citations, referenceType = "internal") {
@@ -488,8 +523,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * sendMessage 함수는 채팅 입력란의 사용자 메시지를 서버에 전송하고 UI를 최신 상태로 업데이트하는 비동기 함수
+   * - 입력값 검증(공백, 중복전송 방지)
+   * - 대화방이 없으면 새 대화 생성
+   * - 임시 사용자 메시지 렌더링 및 로딩 메시지 표시
+   * - 서버로 메시지 POST 요청 전송
+   * - 정상 응답 시 임시 메시지를 실제 메시지로 대체, assistant 메시지 스트리밍 처리
+   * - 오류 발생 시 임시 메시지 제거 및 메시지 전송 실패 알림
+   * - 항상 로딩 상태, 전송상태 초기화
+   * @param {string} content - 사용자가 입력한 메시지
+   */
   async function sendMessage(content) {
+    // 입력이 없거나 이미 전송 중이면 리턴
     if (!content.trim() || state.isSending) return;
+
+    // 현재 대화방이 없으면 생성
     if (!state.currentConversationId) {
       await createConversation();
       if (!state.currentConversationId) {
@@ -499,9 +548,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     state.isSending = true;
+    // 메시지 캐시가 없으면 생성
     if (!state.messagesCache[state.currentConversationId]) {
       state.messagesCache[state.currentConversationId] = [];
     }
+    // 임시 사용자 메시지 객체 생성 및 캐시에 추가(UX 즉각반응용)
     const tempUserMessage = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -515,6 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showLoadingMessage();
 
     try {
+      // 서버에 메시지 전송 요청
       const res = await fetch(`${conversationBaseUrl}${state.currentConversationId}/messages/`, {
         method: "POST",
         credentials: "same-origin",
@@ -526,23 +578,31 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ content }),
       });
       if (!res.ok) throw new Error("send_failed");
+
       const data = await res.json();
-      // replace temp user message with actual one if provided
+
+      // 임시 메시지를 대체/제거
       const conversationMsgs = state.messagesCache[state.currentConversationId] || [];
       const tempIndex = conversationMsgs.findIndex((msg) => msg.id === tempUserMessage.id);
       if (tempIndex !== -1) {
         conversationMsgs.splice(tempIndex, 1);
       }
+
+      // 서버에서 받은 실제 메시지 추가
       const newMessages = data.messages || [];
       conversationMsgs.push(...newMessages);
       state.messagesCache[state.currentConversationId] = conversationMsgs;
       renderMessages();
+      // 어시스턴트 메시지는 스트리밍 적용
       newMessages.filter((msg) => msg.role === "assistant").forEach(streamAssistantMessage);
+      // 오류 메시지 있으면 콘솔 경고
       if (data.error) {
         console.warn("LLM 오류:", data.error);
       }
+      // 대화 목록 새로고침
       await refreshConversations({ preserveCurrent: true });
     } catch (err) {
+      // 전송 실패 시 임시 메시지 제거 후 UI 갱신
       console.error(err);
       alert("메시지 전송에 실패했습니다.");
       const conversationMsgs = state.messagesCache[state.currentConversationId] || [];
@@ -553,6 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderMessages();
       }
     } finally {
+      // 전송 상태 및 로딩 메시지 초기화
       state.isSending = false;
       removeLoadingMessage();
     }
@@ -783,6 +844,99 @@ document.addEventListener("DOMContentLoaded", () => {
     closeFeedbackModal();
   }
 
+  function handleRelatedQuestionsButtonClick(messageId) {
+    if (!messageId || !relatedModal || !relatedModalBody) return;
+    openRelatedQuestionsModal(messageId, { isLoading: true });
+    fetchRelatedQuestions(messageId)
+      .then((questions) => {
+        renderRelatedQuestionsModal(messageId, { questions });
+      })
+      .catch((err) => {
+        console.error(err);
+        renderRelatedQuestionsModal(messageId, {
+          error: "연관 질문을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        });
+      });
+  }
+
+  function openRelatedQuestionsModal(messageId, options = {}) {
+    if (!relatedModal || !relatedModalBody) return;
+    relatedModalBody.dataset.messageId = messageId || "";
+    renderRelatedQuestionsModal(messageId, options);
+    relatedModal.classList.remove("hidden");
+  }
+
+  function renderRelatedQuestionsModal(messageId, { isLoading = false, questions = [], error = "" } = {}) {
+    if (!relatedModalBody) return;
+    if (relatedModalBody.dataset.messageId !== String(messageId)) return;
+    let questionsHtml = "";
+    if (error) {
+      questionsHtml = `<p class="related-modal__error">${error}</p>`;
+    } else if (isLoading) {
+      questionsHtml = `
+        <div class="related-modal__loading">
+          <div class="related-modal__spinner"></div>
+          <p>연관 질문을 생성하는 중입니다...</p>
+        </div>
+      `;
+    } else if (questions && questions.length) {
+      questionsHtml = `
+        <ol class="related-modal__questions">
+          ${questions
+            .map(
+              (question) => `
+            <li class="related-modal__question-item">
+              <button
+                type="button"
+                class="related-modal__question-button"
+                data-question="${encodeURIComponent(question)}"
+              >
+                <i class="fa-solid fa-circle-question"></i>
+                <span>${escapeHtml(question)}</span>
+              </button>
+            </li>
+          `
+            )
+            .join("")}
+        </ol>
+      `;
+    } else {
+      questionsHtml = `<p class="related-modal__empty">생성된 질문이 없습니다.</p>`;
+    }
+
+    relatedModalBody.innerHTML = `
+      <div class="related-modal__section">
+        <div class="related-modal__section-title">연관 질문 추천</div>
+        ${questionsHtml}
+      </div>
+    `;
+  }
+
+  function closeRelatedQuestionsModal() {
+    if (!relatedModal || !relatedModalBody) return;
+    relatedModal.classList.add("hidden");
+    relatedModalBody.dataset.messageId = "";
+    relatedModalBody.innerHTML = "";
+  }
+
+  function handleRelatedQuestionSelection(event) {
+    if (!relatedModalBody) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest(".related-modal__question-button");
+    if (!button) return;
+    const encoded = button.dataset.question || "";
+    let question = "";
+    try {
+      question = decodeURIComponent(encoded);
+    } catch {
+      question = encoded;
+    }
+    if (!question) return;
+    applyRelatedQuestionToInput(question);
+    closeRelatedQuestionsModal();
+  }
+
   async function handleGraphButtonClick(button, messageId) {
     if (!button || !messageId) return;
     button.disabled = true;
@@ -824,5 +978,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const data = await res.json();
     return data.graph || "";
+  }
+
+  async function fetchRelatedQuestions(messageId) {
+    const url = `${relatedQuestionsBaseUrl}${messageId}/related-questions/`;
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+        Accept: "application/json",
+      },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "related_questions_failed");
+    }
+    const questions = Array.isArray(data.questions) ? data.questions : [];
+    return questions.map((q) => (typeof q === "string" ? q.trim() : String(q))).filter(Boolean).slice(0, 3);
+  }
+
+  function getMessageById(messageId) {
+    const messages = getCurrentMessages();
+    return messages.find((msg) => String(msg.id) === String(messageId)) || null;
+  }
+
+  function applyRelatedQuestionToInput(question) {
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
+    if (!chatInput || !sendBtn) return;
+    chatInput.value = question;
+    sendBtn.disabled = !chatInput.value.trim();
+    sendBtn.style.background = sendBtn.disabled ? "#d1d5db" : "#3b82f6";
+    sendBtn.style.cursor = sendBtn.disabled ? "not-allowed" : "pointer";
+    chatInput.focus();
   }
 });

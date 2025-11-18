@@ -25,4 +25,9 @@ urlpatterns = [
         views.message_concept_graph,
         name="message_concept_graph",
     ),
+    path(
+        "api/messages/<int:message_id>/related-questions/",
+        views.message_related_questions,
+        name="message_related_questions",
+    ),
 ]

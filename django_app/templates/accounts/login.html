@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static sass_tags %}
+
+{% block title %}로그인 - MedAI Research{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% sass_src 'css/login.scss' %}">
+{% endblock %}
+
+{% block content %}
+<div class="login-page">
+  <div class="login-container">
+    
+    <div class="login-left">
+      <iframe
+        class="video-background"
+        src="https://www.youtube.com/embed/lvko_FKKbO8?autoplay=1&mute=1&loop=1&playlist=lvko_FKKbO8&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1"
+        title="Background Video"
+        allow="autoplay; encrypted-media"
+        allowfullscreen
+      ></iframe>
+      <div class="video-overlay"></div>
+      <div class="login-content">
+        <div>
+          <div class="login-brand-header">
+            <div class="login-brand-icon">
+              <img src="/static/img/medai-logo.png" alt="MedAI 로고" class="login-brand-icon__image">
+            </div>
+            <div>
+              <h1 class="login-brand-title login-brand-title--light">MedAI Research</h1>
+              <p class="login-brand-subtitle login-brand-subtitle--light">의료 연구 AI 어시스턴트</p>
+            </div>
+          </div>
+
+          <div class="login-feature-list">
+            <div class="login-feature">
+            <div class="login-feature__icon">
+              <i class="fa-solid fa-hospital icon"></i>
+            </div>
+            <div>
+              <h3 class="login-feature__title">국내 최고 의료진 데이터</h3>
+              <p class="login-feature__desc">Big 5 병원과 서울시 보라매병원이 참여해 구축한 말뭉치</p>
+            </div>
+          </div>
+
+          <div class="login-feature">
+            <div class="login-feature__icon">
+              <i class="fa-solid fa-dna icon"></i>
+            </div>
+            <div>
+              <h3 class="login-feature__title">필수의료 지식 개방</h3>
+              <p class="login-feature__desc">질의응답 1.5만 쌍과 전문 의료 안내문, 정부·학회 가이드라인 공개</p>
+            </div>
+          </div>
+
+          <div class="login-feature">
+            <div class="login-feature__icon">
+              <i class="fa-solid fa-globe icon"></i>
+            </div>
+            <div>
+              <h3 class="login-feature__title">다각도의 신뢰 가능한 출처</h3>
+              <p class="login-feature__desc">학술 논문, 정부·국제 가이드라인, 동의서까지 통합</p>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <div class="login-footer-text">
+          © 2025 MedAI Research. All rights reserved.
+        </div>
+      </div>
+    </div>
+    <!-- end of login-left -->
+
+    <div class="login-right">
+      <div class="login-form-card">
+        <div class="login-mobile-brand">
+          <div class="login-brand-badge">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div>
+            <h1 class="login-brand-title login-brand-title--dark">MedAI Research</h1>
+            <p class="login-brand-subtitle">의료 연구 AI 어시스턴트</p>
+          </div>
+        </div>
+
+        <div class="card login-card">
+          <div class="login-card__header">
+            <h2 class="login-card__title">로그인</h2>
+            <p class="login-card__subtitle">계정 정보를 입력해주세요</p>
+          </div>
+
+          {% if messages %}
+          <div class="login-info">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <form id="loginForm" method="post" novalidate class="login-form">
+            {% csrf_token %}
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            {% if form.non_field_errors %}
+            <div class="login-error">
+              {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div>
+              <label class="label" for="{{ form.username.id_for_label }}">아이디</label>
+              <div class="input-icon-wrapper">
+                <i class="fa-solid fa-envelope icon input-icon"></i>
+                <input
+                  class="input input-with-icon"
+                  type="text"
+                  name="{{ form.username.name }}"
+                  id="{{ form.username.auto_id }}"
+                  value="{{ form.username.value|default_if_none:'' }}"
+                  placeholder="example@hospital.com"
+                  autocomplete="email"
+                  required
+                />
+              </div>
+              {% if form.username.errors %}
+              <p class="login-error login-error--inline">{{ form.username.errors|first }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="label" for="{{ form.password.id_for_label }}">비밀번호</label>
+              <div class="input-icon-wrapper">
+                <i class="fa-solid fa-lock icon input-icon"></i>
+                <input
+                  class="input input-with-icon input-with-toggle"
+                  type="password"
+                  name="{{ form.password.name }}"
+                  id="{{ form.password.auto_id }}"
+                  autocomplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  id="togglePassword"
+                  class="input-icon-button"
+                  aria-label="비밀번호 표시 전환"
+                >
+                  <i id="eyeIcon" class="fa-solid fa-eye icon"></i>
+                </button>
+              </div>
+              {% if form.password.errors %}
+              <p class="login-error login-error--inline">{{ form.password.errors|first }}</p>
+              {% endif %}
+            </div>
+
+            <div class="login-form__extras">
+              <label for="rememberMe" class="login-remember">
+                <input type="checkbox" id="rememberMe" name="remember_me" checked>
+                <span>로그인 상태 유지</span>
+              </label>
+              <a href="{% url 'accounts:password_reset' %}" class="login-link">비밀번호 찾기</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="loginBtn">
+              로그인
+            </button>
+          </form>
+
+          <div class="login-bottom-note">
+            <p class="login-secondary-text">
+              계정이 없으신가요?
+              <a href="{% url 'accounts:register' %}" class="login-link">회원가입</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="login-footer">
+          데모 계정: demo@medai.com / password123
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/login.js' %}" defer></script>
+{% endblock %}

@@ -1,0 +1,237 @@
+$forest-bg: linear-gradient(135deg, #0a1d37 0%, #102d4c 40%, #1a3e61 100%);
+$card-bg: rgba(255, 255, 255, 0.15);
+$border-color: rgba(255, 255, 255, 0.4);
+$text-primary: #f3f6ff;
+
+.register-hero {
+  min-height: 100vh;
+  background: $forest-bg, url("/static/img/bg-medical.png") center/cover no-repeat fixed;
+  background-blend-mode: soft-light;
+  position: relative;
+  color: $text-primary;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.register-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 15, 30, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 0;
+}
+
+.register-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 80px 0 80px;
+
+  .register-logo {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    img {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .register-nav-login {
+    border: 1px solid $text-primary;
+    padding: 10px 30px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: $text-primary;
+    transition: background 0.3s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}
+
+.register-card-wrapper {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px 80px;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  background: $card-bg;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  color: $text-primary;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+      font-size: 32px;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+
+  &__close {
+    border: none;
+    background: transparent;
+    color: $text-primary;
+    font-size: 20px;
+    cursor: pointer;
+  }
+}
+
+.register-field {
+  margin-bottom: 18px;
+
+  label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 0;
+    opacity: 0.9;
+  }
+}
+
+.register-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid $border-color;
+  padding: 8px 4px;
+
+  i {
+    font-size: 16px;
+    opacity: 0.8;
+  }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: $text-primary;
+    font-size: 16px;
+    padding: 8px 0;
+  }
+}
+
+.register-terms {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  margin: 10px 0 24px;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+  }
+
+  label {
+    margin: 0;
+    opacity: 0.85;
+    cursor: pointer;
+  }
+}
+
+.register-submit {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #0f1e2e;
+  // background: linear-gradient(135deg, #d1efff, #6be0ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+
+  &__pulse {
+    width: 16px;
+    height: 16px;
+    border: 3px solid rgba(15, 30, 46, 0.4);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1.6s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.register-switch {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 14px;
+
+  a {
+    color: #7fe7ff;
+    text-decoration: none;
+  }
+}
+
+.register-secondary-text {
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #dddddd;
+}
+
+.register-error {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.4);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+
+  &--inline {
+    background: transparent;
+    border: 0;
+    padding: 4px 0 0;
+    color: #ffb3b3;
+  }
+}
+
+@media (max-width: 768px) {
+  .register-nav {
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .register-card {
+    padding: 24px;
+  }
+}

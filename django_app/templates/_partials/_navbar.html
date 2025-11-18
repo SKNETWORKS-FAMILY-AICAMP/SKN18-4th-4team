@@ -1,0 +1,97 @@
+<header class="main-header">
+  <div class="container header-padding">
+    <div class="flex-between">
+      <div class="flex-gap-sm">
+        <div class="badge-square brand-badge">
+          <!-- <i class="fa-solid fa-robot brand-badge__icon"></i> -->
+          <img src="/static/img/medai-logo.png" alt="MedAI 로고" class="brand-badge__image">
+        </div>
+        <div>
+          <h1 class="brand-title">MedAI Research</h1>
+          <p class="brand-subtitle">의료 연구 AI 어시스턴트</p>
+        </div>
+      </div>
+      <div class="flex-gap-md">
+        <div class="flex-gap-sm">
+          <button
+            type="button"
+            class="badge-circle user-avatar{% if user_avatar_url %} user-avatar--has-image{% endif %}"
+            id="userAvatarBtn"
+            aria-haspopup="dialog"
+            aria-controls="profileModal"
+            aria-label="프로필 이미지 업로드"
+          >
+            <img
+              id="userAvatarImage"
+              class="user-avatar__image"
+              {% if user_avatar_url %}src="{{ user_avatar_url }}"{% endif %}
+              alt="사용자 프로필 이미지"
+              {% if not user_avatar_url %}hidden{% endif %}
+            >
+            <i class="fa-solid fa-user user-avatar__icon" {% if user_avatar_url %}hidden{% endif %}></i>
+          </button>
+          <div class="text-right">
+            <div id="userName" class="user-name"></div>
+            <div id="userEmail" class="user-email"></div>
+          </div>
+        </div>
+        {% if show_logout %}
+        <button id="logoutBtn" class="icon-button" title="로그아웃">
+          <i class="fa-solid fa-arrow-right-from-bracket logout-icon"></i>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>
+
+<div
+  id="profileModal"
+  class="profile-modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="profileModalTitle"
+  aria-hidden="true"
+>
+  <div class="profile-modal" role="document">
+    <div class="profile-modal__header">
+      <div>
+        <h3 id="profileModalTitle">프로필 이미지 업로드</h3>
+        <p class="profile-modal__subtitle">JPG, PNG 혹은 GIF 파일을 선택하세요.</p>
+      </div>
+      <button type="button" class="profile-modal__close" id="profileModalClose" aria-label="모달 닫기">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form id="profileUploadForm" class="profile-modal__form">
+      <div class="profile-modal__body">
+        <div
+          class="profile-modal__preview{% if user_avatar_url %} profile-modal__preview--has-image{% endif %}"
+          id="profilePreviewContainer"
+        >
+          <i
+            class="fa-solid fa-user profile-modal__preview-placeholder"
+            id="profilePreviewPlaceholder"
+            {% if user_avatar_url %}hidden{% endif %}
+          ></i>
+          <img
+            id="profilePreviewImage"
+            alt="선택된 프로필 이미지 미리보기"
+            {% if user_avatar_url %}src="{{ user_avatar_url }}"{% endif %}
+            {% if not user_avatar_url %}hidden{% endif %}
+          >
+        </div>
+        <label class="profile-modal__input">
+          <span>이미지 선택</span>
+          <input type="file" id="profileImageInput" name="profile_image" accept="image/*">
+        </label>
+        <!-- 프로필 이미지 업로드 관련 상태(성공/오류 등 메시지)를 사용자에게 전달 -->
+        <p id="profileUploadMessage" class="profile-modal__message" role="status"></p>
+      </div>
+      <div class="profile-modal__actions">
+        <button type="button" class="btn btn-secondary" id="profileModalCancel">취소</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </div>
+    </form>
+  </div>
+</div>

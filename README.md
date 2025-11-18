@@ -137,9 +137,283 @@ SKN18-4th-4team/
 
 <img width="1665" height="1007" alt="Image" src="https://github.com/user-attachments/assets/1d154ec5-4634-4957-a9fe-dc5031373d40" />
 
-
-
-
 <img width="1664" height="1007" alt="Image" src="https://github.com/user-attachments/assets/037d2858-0dfe-489b-9547-912f0a65608a" />
 
 <img width="1661" height="1005" alt="Image" src="https://github.com/user-attachments/assets/ee71e97e-663b-40a6-92e9-a9d21ea36d0d" />
+
+
+# [설계]
+
+1. ## ETL
+
+```mermaid  
+flowchart LR
+
+%% ============================
+%% Extract (가로 1번째)
+%% ============================
+subgraph E["Extract"]
+    direction TB
+    A["merged_KOR.csv<br/>필수 의료 지식 원본 CSV"]
+end
+
+%% ============================
+%% Transform (가로 2번째)
+%% ============================
+subgraph T["Transform"]
+    direction TB
+    B["cleaner.py<br/>정제·정규화"]
+    C["T1_column_renewed.csv<br/>컬럼 정비"]
+    D["T2_parenthesis_stripped.csv<br/>괄호 제거"]
+    E2["chunker.py<br/>문장 분리·청킹"]
+    F["Data_Final.csv<br/>청킹 결과"]
+end
+
+%% ============================
+%% Load (가로 3번째)
+%% ============================
+subgraph L["Load"]
+    direction TB
+    G["embed_runner.py<br/>ETL 실행"]
+    H["csvloader.py<br/>Document 변환"]
+    I["OpenAIEmbeddings<br/>text-embedding-3-small"]
+    J["vectorstore_pg.py<br/>pgvector 적재"]
+end
+
+%% ============================
+%% Flow (E → T → L)
+%% ============================
+A --> B
+F --> G
+```
+
+2. ## **시스템 구성 및 흐름도**
+
+```mermaid  
+flowchart TB
+
+%% =====================================
+%% 1) Data / RAG ETL Layer (요약 버전)
+%% =====================================
+subgraph ETL["RAG / ETL Pipeline (요약)"]
+    A["의료 지식 ETL 파이프라인<br/>CSV → 정제 → 청킹 → 임베딩 → pgvector 적재"]
+end
+
+
+%% =====================================
+%% 2) RAG Runtime Layer
+%% =====================================
+subgraph RAG["RAG 서비스 계층 (rag/services)"]
+    F["db_pool.py<br/>DB 커넥션 풀"]
+    G["vectorstore_pg.py<br/>pgvector Wrapper"]
+    H["retriever.py<br/>RAG 검색"]
+end
+
+A --> F --> G --> H
+
+
+%% =====================================
+%% 3) LangGraph Workflow (축약: 메모리/분류/pgvector/websearch/LLM)
+%% =====================================
+subgraph LANGGRAPH["LangGraph Pipeline (graph 앱)"]
+    I["메모리 상태 관리<br/>SelfRAGState (state.py)"]
+    J["질문 분류 노드<br/>의학/비의학/기타 라우팅"]
+    L["pgvector 검색 노드<br/>내부 의료 지식 RAG"]
+    M["web_search 노드<br/>외부 논문/가이드라인 검색"]
+    O["LLM 응답 생성 노드<br/>최종 답변·근거 정리"]
+
+    I --> J --> L --> M --> O
+end
+
+H --> L
+O --> |structured_answer| P
+
+
+%% =====================================
+%% 4) Django Web Layer
+%% =====================================
+subgraph DJANGO["Django Web/API 계층 (django_app)"]
+
+    subgraph ACC["accounts 앱"]
+        Q["CustomUser<br/>회원가입/로그인"]
+        R["UserActivityLog<br/>접속 기록"]
+    end
+
+    subgraph CHAT["chat 앱"]
+        S["REST API<br/>/chat/api/..."]
+        T["generate_ai_response<br/>LangGraph 호출"]
+        U["Messages / Feedback 저장"]
+        V["관련 질문 / concept graph"]
+    end
+
+    subgraph MAIN["main 앱"]
+        W["대시보드<br/>정확도·RAG 비율 시각화"]
+    end
+end
+
+P --> T --> U
+U --> W
+
+
+%% =====================================
+%% 5) Frontend Layer
+%% =====================================
+subgraph FRONT["Django Templates + JS"]
+    X["chat.html / main.html / accounts.html"]
+    Y["chat.js<br/>대화·참고문헌·피드백 UI"]
+end
+
+DJANGO --> X --> Y
+```
+
+## [구현]
+
+### 1. RAG
+ - **목적**: 데이터 전처리~ 임베딩(ETL) 모듈화 및 진행 후 유저의 질문의 유사도가 높은 청킹데이터 추출  
+ - **결과**: ETL 파이프라인 구축, 유사도 테스트를 통한 질문과 관련성 높은 청킹 추출  
+ 
+#### ETL  
+1) Cleaning:
+ - Column 재정의
+   - c_id, source_spec, creation_year 문헌 레퍼런스 형식으로 재조합  
+   - ex) guide_kr_2023_1182_1  
+   - content 유지  
+   - 그 외 나머지 Column Drop
+ - 숫자 + 온점(.) 클리닝
+   - 데이터 상에서 항목은 필요없음 → Drop
+ - 인용구 Drop
+   - 번역 / 인용 구분 후 인용구만 Drop
+ - 큰따옴표 클리닝
+   - Content 내에 있는 큰따옴표 클리닝
+ - c_id 컬럼 내 연도가 2023.0 처럼 소수점이 있는 부분 소수점 Drop (2023.0 → 2023)
+ - ( 5%)와 같이 ( 뒤에 공백이 있는 부분 strip
+2) Chunking:
+ - 문장단위 Chunking
+   - . ! ? 로 끊기는 부분을 문장으로 인식, 3개의 갯수를 카운트하고 2문장 단위로 Chunking
+3) Embeding:  
+ - OPENAI Model: text-embedding-3-small  
+ - batch_size = 100  
+ - 동기로 실행  
+ - Dimension_size=1536  
+ - 소요시간: 약 30분
+
+### pgvector  
+1) Data  
+ - 원본 문서 수: 9686개  
+ - pgvector 데이터 수: 116420개  
+2) Column  
+ - id: Auto_Increament  
+ - content: raw data  
+ - embedding: Embedding Data  
+ - metadata: c_id (Reference)
+
+### retriver  
+ 1) Classify node에서 query embedding 진행  
+ 2) Similarity: 코사인 유사도 검색  
+ 3) TOP_K: 5개  
+ 4) 참조문헌: Metadata 사용 (단, 중복제외)
+
+### evaluation  
+ 1) 질문과 코사인 유사도로 뽑힌 Chunk들의 관련성을 평가  
+ 2) 0~1점 사이로 점수를 LLM이 자체적으로 평가  
+ 3) 각 청크의 점수가 0.3점 이하면 Drop  
+ 4) chunk가 1개 이상 뽑히면 → Generate_Answer  
+ 5) chunk가 1개도 안뽑히면(0개) → rewrite_query 
+
+
+## 2. LangGraph
+- **역할** : **전체 AI 파이프라인을 오케스트레이션(orchestration)** 하는 핵심 엔진 (운영, 실험, 안전, 재시도 등)
+- **목적**:  
+  `langgraph` 워크플로우로 의료 특화 Self-RAG 파이프라인을 구성해 질문 유형에 따라 사용자 정보·비의학·의학 질문을 자동 라우팅하고, 용어 질문은 WebSearch, 일반 의학 질문은 RAG 검색으로 보내도록 설계
+- **워크플로우 :** 메모리 → 질문 분류 → 용어 판별 → 검색/웹서치 → 검증 → 답변 → 메모리 기록  
+- **노드 별 기능**  
+  - **memory_read** : sqlLightDB에 저장된 기존 대화내역 전달(user_info는 5개, medical은 1개)  
+  - **classifier** : 사용자의 질문을 medical, user_info, none_medical로 분류  
+  - **medical_check** : vectorDB / Websearch 대상(의학 용어)인지 판별  
+  - **retriver** : vectorDB에서 유사도 검색을 통해 유사도 높은 청크 5개 추출  
+    **evaluate_chunk** : 추출된 5개의 청크가 원본질문과 연관성이 있는지 llm이 판단하여 점수 부여.  
+  		       재작성 후 추출된 모든 청크가 질문과 관련이 없는 경우  최종 메세지와 함께 END  
+    **rewrite_query** : evaluate_chunk에서 낮은 점수가 나오면 llm이 질문을 재작성하여 retriver로 전달(최대 1번)  
+  - **WebSearch** : Tavily를 사용해 의학 용어 정의 검색  
+  - **Generate_answer** : 답변 형식 고정, llm 판단 점수출력, 출처 추출  
+  - **memory_write** : 질문과 Generate_answer에서 생성된 답변 원본과 summary, 채팅창 아이디(conversation_id)를 sqlLightDB에 저장  
+    
+  [ LangGraph 흐름도]  
+    
+  <img width="1740" height="853" alt="Image" src="https://github.com/user-attachments/assets/c16e607d-ee59-4bf5-b193-7180ffe85d19" />  
+    
+  더 자세한 구현 사항은 issue를 참고해 주세요  
+  ([https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN18-4th-4team/issues/47](https://github.com/SKNETWORKS-FAMILY-AICAMP/SKN18-4th-4team/issues/47))
+
+
+
+### 3. WEB
+
+- **목적** : AI 기반 연구지원 플랫폼의 웹 인터페이스를 구현하여, 사용자 인증·대화 이력 관리·데이터 시각화 등을 통합적으로 제공한다.  
+- **도구** : Django Framework (SSR 기반 MVT 구조)  
+  - Django의 MVT(Model–View–Template) 패턴을 사용  
+  - 서버에서 HTML을 렌더링하는 **SSR(Server-Side Rendering)** 방식으로 화면을 제공  
+- **핵심 기능**:  
+  - 인증 / 가입  
+    - django.contrib.auth + Form 기반 로그인/회원가입 (SignupForm, UserCreationForm)  
+    - 비밀번호 찾기 : SMTP 이메일 전송  
+    - 프로필: 이미지 파일 업로드  
+    - 사용자 활동 로그: Middleware로 URL/메서드/User-Agent/IP 저장  
+    - 페이지 접근 제한은 `@login_required` 데코레이터로 처리 (Middleware 대체)  
+  - AI 대화 기능  
+    - Conversation 모델 기반 대화 관리  
+    - Message 모델로 사용자/AI 메시지 저장  
+    - LangGraph/LLM 연동 (AI 응답 + 참고문헌)  
+    - 피드백 관리(👍/👎, 사유 코드 저장)  
+    - AI 보조 도구: **Concept Graph**(Mermaid 다이어그램) 생성, **연관 질문 생성**  
+  - 대시보드  
+    - 대화량·사용자 수·정확도·참고문헌 비율 등 실시간 **메트릭 집계**  
+- **주요 모델** :   
+  - **CustomUser** : 사용자 이름과 이메일을 기반으로 로그인하는 **커스텀 사용자 모델**  
+  - **UserActivityLog** : 사용자가 접근한 **URL, HTTP 메서드, User-Agent, IP** 등을 기록하는  
+  - 간단한 **활동 감사 로그(audit log)** 모델 (보안 점검 및 사용 패턴 분석)  
+  - **ChatConversation** : 한 사용자의 **개별 대화 세션**을 나타내는 모델  
+  - **Message**: 대화 안의 **개별 메시지**를 저장합니다. 역할, 본문, 참고문헌,  
+    응답 품질, concept graph 정보, 사용자 피드백 등 관리  
+  - **MessageFeedback** : 특정 메시지에 대해 사용자가 남긴 **피드백과 사유**를 저장합니다. (예: 사실 오류, 참고문헌 오류 등)  
+- **주요 API**   
+  - **Accounts**:   
+    - **GET/POST · `/accounts/login/`**  
+      - 커스텀 로그인 화면을 보여주고, 로그인 요청을 처리  
+    - **GET · `/accounts/logout/`**  
+      - 로그아웃 후 로그인 페이지로 이동  
+    - **GET/POST · `/accounts/register/`**  
+      - 이름·이메일 기반 회원가입을 처리하고 약관 동의 여부를 저장  
+    - **POST · `/accounts/profile-image/`**  
+      - 프로필 이미지를 업로드. 인증 여부와 파일 크기를 체크한 뒤 저장된 이미지 경로 반환  
+  - **Chat**  
+  - **GET/POST · `/chat/api/conversations/`**  
+* GET: 사용자의 전체 대화 목록 조회  
+* POST: 새 대화 생성  
+  - **GET/DELETE · `/chat/api/conversations/<id>/`**  
+    - 특정 대화를 조회하거나 삭제(soft delete, archive)  
+  - **POST · `/chat/api/conversations/<id>/messages/`**  
+    - 사용자 메시지를 저장한 뒤, LangGraph/LLM을 호출하여 AI 답변과 참고문헌(citations)을 함께 반환  
+  - **PATCH · `/chat/api/messages/<id>/`**  
+    -  특정 메시지에 대해 **긍정/부정 평가와 사유**를 저장하거나 삭제  
+  - **POST · `/chat/api/messages/<id>/concept-graph/`**  
+    -  AI 응답 내용을 기반으로 **Mermaid 다이어그램 코드**를 생성하고 캐시  
+  - **POST · `/chat/api/messages/<id>/related-questions/`**  
+    -  AI 응답을 분석하여 **연관 후속 질문 3개**를 생성  
+- **향후 개선 방향**:  
+  - 사용자별 피드백 통계  
+  - 피드백 기반 AI 메모리 개선  
+  - 모델별 응답 비교 기능  
+  - 관리자 페이지 강화
+
+## [평가]
+
+유사도 점수
+
+<img width="568" height="46" alt="Image" src="https://github.com/user-attachments/assets/7930a37a-bf1d-447f-88ae-ad79bb1bf162" />
+
+llm 평가
+
+<img width="248" height="61" alt="Image" src="https://github.com/user-attachments/assets/7e89c53a-5bc2-4ce7-85d6-1cc767cc20ef" />  
+
+
